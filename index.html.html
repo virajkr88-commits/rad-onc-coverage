@@ -1,0 +1,2427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rad Onc Coverage</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background-color: #f8fafc; }
+        
+        /* Print Styles */
+        @media print {
+            body * { visibility: hidden; }
+            .print-area, .print-area * { visibility: visible; }
+            .print-area { position: absolute; left: 0; top: 0; width: 100%; }
+            .print-hidden { display: none !important; }
+            body { background-color: white; }
+        }
+
+        /* Custom Scrollbar for small lists */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="min-h-screen pb-12 text-slate-800">
+
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm mb-8 print-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col lg:flex-row justify-between items-center py-4 gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="bg-blue-600 p-2 rounded-xl">
+                        <i data-lucide="activity" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Rad Onc Coverage</h1>
+                </div>
+                
+                <div class="flex flex-col lg:flex-row items-center gap-4 w-full lg:w-auto">
+                    <nav class="flex space-x-1 bg-slate-100 p-1 rounded-xl w-full sm:w-auto overflow-x-auto">
+                        <button onclick="switchTab('dayview')" id="nav-dayview" class="nav-btn whitespace-nowrap flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all bg-white text-blue-700 shadow-sm">
+                            <i data-lucide="sun" class="w-4 h-4"></i> <span class="hidden sm:inline">Day View</span>
+                        </button>
+                        <button onclick="switchTab('calendar')" id="nav-calendar" class="nav-btn whitespace-nowrap flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-200">
+                            <i data-lucide="calendar" class="w-4 h-4"></i> <span class="hidden sm:inline">Calendar</span>
+                        </button>
+                        <button onclick="switchTab('oncall')" id="nav-oncall" class="nav-btn whitespace-nowrap flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-200">
+                            <i data-lucide="phone-call" class="w-4 h-4"></i> <span class="hidden sm:inline">Call</span>
+                        </button>
+                        <button onclick="switchTab('coverage')" id="nav-coverage" class="nav-btn whitespace-nowrap flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-200">
+                            <i data-lucide="clipboard-list" class="w-4 h-4"></i> <span class="hidden sm:inline">Absences</span>
+                        </button>
+                        <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn whitespace-nowrap flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-200">
+                            <i data-lucide="settings" class="w-4 h-4"></i> <span class="hidden sm:inline">Settings</span>
+                        </button>
+                    </nav>
+
+                    <div class="flex flex-wrap w-full sm:w-auto gap-2 justify-center">
+                        <button onclick="openNotifyModal()" class="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-2 rounded-lg font-medium text-sm hover:bg-emerald-100 transition-colors shadow-sm">
+                            <i data-lucide="bell" class="w-4 h-4"></i> <span class="hidden sm:inline">Notify</span>
+                        </button>
+                        <button onclick="openNotifyPeerReviewModal()" class="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 px-4 py-2 rounded-lg font-medium text-sm hover:bg-amber-100 transition-colors shadow-sm">
+                            <i data-lucide="calendar-plus" class="w-4 h-4"></i> <span class="hidden sm:inline">Notify Peer Review</span>
+                        </button>
+                        <button onclick="generateDailySummaryEmail()" class="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-indigo-50 border border-indigo-200 text-indigo-700 px-4 py-2 rounded-lg font-medium text-sm hover:bg-indigo-100 transition-colors shadow-sm">
+                            <i data-lucide="mail" class="w-4 h-4"></i> <span class="hidden sm:inline">Email Reminder</span>
+                        </button>
+                        <button id="auth-btn" onclick="toggleAuth()" class="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-slate-900 transition-colors shadow-sm">
+                            <i data-lucide="log-in" class="w-4 h-4"></i> Sign In
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="px-4 sm:px-6 lg:px-8">
+        <div id="view-dayview" class="view-section hidden max-w-[1600px] w-full mx-auto space-y-6 animate-fade-in">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
+                <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Coverage - Day View</h2>
+                <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex items-center gap-3">
+                    <i data-lucide="calendar" class="w-5 h-5 text-blue-600"></i>
+                    <div class="flex flex-col">
+                        <span class="text-[10px] font-bold text-slate-500 uppercase">Staff Schedule</span>
+                        <input type="date" id="dayview-date-picker" onchange="changeCalendarDate(this.value)" class="text-sm font-medium outline-none cursor-pointer bg-transparent text-slate-800">
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Left Column: Main & NP -->
+                <div class="space-y-6 xl:col-span-1">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="users" class="w-5 h-5 text-slate-500"></i> Main Schedule</h3>
+                        <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                            <div class="bg-slate-50 border-b border-slate-200 p-3">
+                                <div id="dayview-main-day" class="font-bold text-slate-700"></div>
+                                <div id="dayview-main-date" class="text-xs font-medium text-slate-500"></div>
+                            </div>
+                            <div id="dayview-main-content" class="p-3 space-y-3 min-h-[150px]"></div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="user-plus" class="w-5 h-5 text-indigo-500"></i> Nurse Practitioner</h3>
+                        <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                            <div class="bg-slate-50 border-b border-slate-200 p-3">
+                                <div id="dayview-np-day" class="font-bold text-slate-700"></div>
+                                <div id="dayview-np-date" class="text-xs font-medium text-slate-500"></div>
+                            </div>
+                            <div id="dayview-np-content" class="p-3 space-y-3 min-h-[150px]"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Middle Column: Coverage & Urgent Care -->
+                <div class="space-y-6 xl:col-span-2">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
+                            <i data-lucide="stethoscope" class="w-5 h-5 text-indigo-600"></i> Daily Site Coverage Assignments
+                        </h3>
+                        <div class="font-bold text-slate-700 mb-3" id="dayview-site-title">Coverage</div>
+                        <div id="dayview-site-content" class="min-h-[100px]"></div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <h3 class="font-bold text-rose-600 flex items-center gap-2 text-sm uppercase tracking-wider border-b border-slate-100 pb-4 mb-4">
+                            <i data-lucide="shield-plus" class="w-4 h-4"></i> Urgent Care and On-Call
+                        </h3>
+                        <div class="flex flex-col sm:flex-row gap-4 justify-center sm:justify-start">
+                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex-1 max-w-xs text-center">
+                                <div id="dayview-uc-day" class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1"></div>
+                                <div class="text-[10px] font-bold text-rose-500 uppercase tracking-widest mb-2">URGENT CARE</div>
+                                <div id="dayview-uc-content" class="font-bold text-slate-900 flex flex-col items-center w-full"></div>
+                            </div>
+                            <div class="flex items-center gap-4 text-sm font-medium text-slate-700 bg-slate-50 px-4 py-3 rounded-xl border border-slate-200 flex-1 max-w-sm justify-center">
+                                <div class="flex flex-col gap-3 w-full">
+                                    <div class="flex justify-between items-start gap-4 w-full">
+                                        <span class="text-xs text-[#829ab1] uppercase font-bold mt-0.5 tracking-wider">ON-CALL 1ST CALL:</span> 
+                                        <div id="dayview-oncall-1" class="text-right flex flex-col items-end"></div>
+                                    </div>
+                                    <div class="flex justify-between items-start gap-4 w-full pt-3 border-t border-slate-200">
+                                        <span class="text-xs text-[#829ab1] uppercase font-bold mt-0.5 tracking-wider">ON-CALL 2ND CALL:</span> 
+                                        <div id="dayview-oncall-2" class="text-right flex flex-col items-end"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Peer Review -->
+                <div class="xl:col-span-1">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-100 pb-4">
+                            <i data-lucide="microscope" class="w-5 h-5 text-emerald-600"></i> Peer Review
+                        </h3>
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-sm border-b border-slate-200">
+                                    <th class="py-2 px-3 font-semibold text-slate-600 w-1/3">Site</th>
+                                    <th id="dayview-pr-day" class="py-2 px-3 font-semibold text-slate-600 text-right"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="dayview-pr-content" class="divide-y divide-slate-100 bg-white">
+                                <!-- Injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-calendar" class="view-section hidden max-w-[1600px] w-full mx-auto space-y-6 animate-fade-in">
+            <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
+                
+                <!-- Left Main Calendar Area -->
+                <div class="xl:col-span-3 space-y-6">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        
+                        <!-- Header Controls -->
+                        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
+                            <div>
+                                <h2 class="text-xl font-semibold text-slate-800 flex items-center gap-2">
+                                    <i data-lucide="calendar" class="w-5 h-5 text-blue-600"></i> Staff Schedule
+                                </h2>
+                                <div class="flex items-center gap-3 mt-2 text-sm text-slate-500 font-medium">
+                                    <input type="date" id="calendar-date-picker" onchange="changeCalendarDate(this.value)" class="bg-transparent border-b border-slate-300 hover:border-blue-500 text-slate-800 outline-none cursor-pointer transition-colors pb-0.5">
+                                    <span id="sync-indicator" class="hidden text-blue-600 flex items-center gap-1 animate-pulse"><i data-lucide="activity" class="w-3.5 h-3.5"></i> Syncing...</span>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-wrap items-center gap-3">
+                                <button onclick="loadScheduleData()" class="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-lg font-medium hover:bg-slate-50 transition-colors flex items-center gap-2 shadow-sm">
+                                    ↻ Refresh
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- URGENT CARE ROW -->
+                        <div class="mb-8">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 bg-slate-50 border border-slate-200 px-4 py-3 rounded-lg gap-4">
+                                <h3 class="font-bold text-rose-600 flex items-center gap-2 text-sm uppercase tracking-wider">
+                                    <i data-lucide="shield-plus" class="w-4 h-4"></i> Urgent Care and On-Call
+                                </h3>
+                                <div id="urgent-care-oncall-display" class="flex gap-4 text-sm font-medium text-slate-700 bg-white px-3 py-1.5 rounded shadow-sm border border-slate-200">
+                                    <!-- Dynamic Daily On-Call Info -->
+                                </div>
+                            </div>
+                            <div id="urgent-care-grid" class="grid grid-cols-1 lg:grid-cols-5 gap-4"></div>
+                        </div>
+
+                        <!-- Legend -->
+                        <div class="flex flex-wrap gap-4 mb-6 text-sm font-medium bg-slate-50 p-3 rounded-xl border border-slate-200">
+                            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-green-500"></span> Away AM</div>
+                            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-500"></span> Away PM</div>
+                            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-yellow-500"></span> Sick</div>
+                            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-red-500"></span> Off/Vacation</div>
+                            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-slate-400"></span> Unavailable</div>
+                            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-purple-500"></span> Clinic</div>
+                            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-teal-500"></span> Inpatient Floor</div>
+                            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-orange-500"></span> Review AM</div>
+                            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-pink-500"></span> Review PM</div>
+                            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-cyan-500"></span> CCAU / Rad Floor</div>
+                            <div class="flex items-center gap-2 text-slate-400"><span class="w-3 h-3 rounded-full bg-slate-300 border border-slate-400"></span> Holiday</div>
+                        </div>
+
+                        <!-- Main MD Schedule Grid -->
+                        <div class="mb-10">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                                    <i data-lucide="users" class="w-5 h-5 text-slate-500"></i> Main Schedule
+                                </h3>
+                                <div class="flex gap-2">
+                                    <button onclick="openModal('clinic', 'MD')" class="auth-required hidden bg-purple-50 border border-purple-200 text-purple-700 px-3 py-1.5 rounded-lg font-medium hover:bg-purple-100 transition-colors flex items-center gap-1.5 text-sm shadow-sm">
+                                        <i data-lucide="plus" class="w-3.5 h-3.5"></i> Clinic
+                                    </button>
+                                    <button onclick="openModal('absence', 'MD')" class="auth-required hidden bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-1.5 text-sm">
+                                        <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Assignment
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="main-calendar-grid" class="grid grid-cols-1 lg:grid-cols-7 gap-4"></div>
+                        </div>
+
+                        <!-- NP Roles Grid -->
+                        <div class="mb-10 pt-8 border-t border-slate-200">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                                    <i data-lucide="user-plus" class="w-5 h-5 text-indigo-500"></i> Nurse Practitioner Roles
+                                </h3>
+                                <button onclick="openModal('absence', 'NP')" class="auth-required hidden bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-1.5 text-sm">
+                                    <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add NP Assignment
+                                </button>
+                            </div>
+                            <div id="np-calendar-grid" class="grid grid-cols-1 lg:grid-cols-5 gap-4"></div>
+                        </div>
+
+                        <div class="pt-8 border-t border-slate-200">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                                    <i data-lucide="microscope" class="w-5 h-5 text-emerald-600"></i> Peer Review
+                                </h3>
+                                <button onclick="openModal('peer_review')" class="auth-required hidden bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-1.5 text-sm">
+                                    <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Assignment
+                                </button>
+                            </div>
+                            <div class="overflow-x-auto rounded-xl border border-slate-200 custom-scrollbar">
+                                <table class="w-full text-left border-collapse min-w-[800px]">
+                                    <thead>
+                                        <tr class="bg-slate-50 text-sm border-b border-slate-200">
+                                            <th class="py-3 px-4 font-bold text-slate-700 w-[150px] sticky left-0 bg-slate-50 shadow-[2px_0_5px_rgba(0,0,0,0.02)] z-20">Site</th>
+                                            <th class="py-3 px-2 font-semibold text-slate-600 text-center">Monday</th>
+                                            <th class="py-3 px-2 font-semibold text-slate-600 text-center">Tuesday</th>
+                                            <th class="py-3 px-2 font-semibold text-slate-600 text-center">Wednesday</th>
+                                            <th class="py-3 px-2 font-semibold text-slate-600 text-center">Thursday</th>
+                                            <th class="py-3 px-2 font-semibold text-slate-600 text-center">Friday</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="peer-review-tbody" class="divide-y divide-slate-100 bg-white">
+                                        <!-- Rows injected by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Right Sidebar Area -->
+                <div class="xl:col-span-1">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 sticky top-24">
+                        <h3 class="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
+                            <i data-lucide="stethoscope" class="w-5 h-5 text-indigo-600"></i> Daily Site Coverage Assignments
+                        </h3>
+                        <div id="coverage-sidebar-content" class="min-h-[200px]">
+                            <!-- Dynamic content injected here -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="view-oncall" class="view-section hidden max-w-[1600px] w-full mx-auto space-y-6 animate-fade-in">
+            <!-- Inpatient Call Schedule -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                    <h2 class="text-xl font-semibold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="building" class="w-5 h-5 text-indigo-600"></i> Inpatient Call Schedule
+                    </h2>
+                    <button onclick="openModal('inpatient', 'Call')" class="auth-required hidden bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2 text-sm">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Assignment +
+                    </button>
+                </div>
+                <div id="inpatient-call-grid" class="grid grid-cols-1 lg:grid-cols-7 gap-4"></div>
+            </div>
+
+            <!-- Monthly On-Call -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                    <h2 class="text-xl font-semibold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="phone-call" class="w-5 h-5 text-blue-600"></i> Monthly On-Call Schedule
+                    </h2>
+                    <input type="month" id="oncall-month-picker" onchange="renderCallTab()" class="border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                
+                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-sm">
+                                <th class="py-3 px-4 font-semibold text-slate-700 w-1/4">Date</th>
+                                <th class="py-3 px-4 font-semibold text-slate-700 w-2/4">1st Call</th>
+                                <th class="py-3 px-4 font-semibold text-slate-700 w-1/4">2nd Call</th>
+                            </tr>
+                        </thead>
+                        <tbody id="oncall-tbody" class="divide-y divide-slate-200 bg-white">
+                            <!-- Rows injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-coverage" class="view-section hidden max-w-4xl mx-auto animate-fade-in">
+            <div class="flex justify-end mb-4 gap-3 print-hidden">
+                <button onclick="window.print()" class="bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg font-medium hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-2 text-sm">
+                    <i data-lucide="file-text" class="w-4 h-4"></i> Print Document
+                </button>
+            </div>
+
+            <div class="print-area bg-white p-10 sm:p-16 rounded-sm shadow-md border border-slate-200 text-black min-h-[800px]">
+                <div class="text-center mb-10 border-b border-slate-300 pb-8">
+                    <h2 class="text-2xl font-bold mb-1 font-serif">Coverage and Assignments</h2>
+                    <p class="text-lg text-slate-700 font-serif italic">for the week of <span id="doc-week-start"></span></p>
+                    <p class="text-sm text-slate-500 mt-4">a.m. = 8:30-12:30; p.m. = 12:30-4:30</p>
+                </div>
+                <div id="doc-absences-content" class="space-y-6 font-serif text-[15px] leading-relaxed"></div>
+            </div>
+        </div>
+
+        <div id="view-settings" class="view-section hidden max-w-4xl mx-auto space-y-6 animate-fade-in">
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 flex items-start gap-3">
+                <i data-lucide="shield-check" class="w-5 h-5 text-amber-600 mt-0.5"></i>
+                <div>
+                    <h4 class="font-bold text-amber-800 text-sm">Administrator Access Only</h4>
+                    <p class="text-sm text-amber-700 mt-1">You are currently signed in and viewing locked settings. Any changes made here affect the entire schedule.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Physicians Settings -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col">
+                    <h2 class="text-xl font-semibold text-slate-800 mb-6 flex items-center gap-2">
+                        <i data-lucide="stethoscope" class="w-5 h-5 text-blue-600"></i> Manage Staff List
+                    </h2>
+                    <form onsubmit="addPhysician(event)" class="flex flex-col gap-2 mb-6">
+                        <div class="flex gap-2">
+                            <input type="text" id="new-physician-name" placeholder="Dr. Name..." required class="w-1/2 rounded-lg border border-slate-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                            <input type="text" id="new-physician-pager" placeholder="Pager Number..." class="w-1/2 rounded-lg border border-slate-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="email" id="new-physician-email" placeholder="Email..." class="flex-1 rounded-lg border border-slate-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                            <button type="submit" class="bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-900 transition-colors">Add</button>
+                        </div>
+                    </form>
+                    <div id="physicians-list" class="space-y-2 flex-1 overflow-y-auto max-h-96 custom-scrollbar pr-2"></div>
+                </div>
+
+                <!-- Email Settings -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col">
+                    <h2 class="text-xl font-semibold text-slate-800 mb-6 flex items-center gap-2">
+                        <i data-lucide="mail" class="w-5 h-5 text-blue-600"></i> Manage Email Contacts
+                    </h2>
+                    <form onsubmit="addEmailList(event)" class="flex flex-col gap-2 mb-6">
+                        <input type="text" id="new-email-name" placeholder="Contact/Group Name..." required class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                        <div class="flex gap-2">
+                            <input type="email" id="new-email-address" placeholder="Email Address..." required class="flex-1 rounded-lg border border-slate-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                            <button type="submit" class="bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-900 transition-colors">Add</button>
+                        </div>
+                    </form>
+                    <div id="emails-list" class="space-y-2 flex-1 overflow-y-auto max-h-96 custom-scrollbar pr-2"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="schedule-modal" class="hidden fixed inset-0 bg-black/50 items-center justify-center z-50 p-4 print-hidden">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden animate-fade-in max-h-[95vh] flex flex-col">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
+                <h3 id="modal-title" class="text-lg font-bold text-slate-800">Add Schedule Entry</h3>
+                <button type="button" onclick="closeModal()" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <form onsubmit="handleSaveSchedule(event)" class="p-6 overflow-y-auto custom-scrollbar flex-1">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                    <div class="flex flex-col justify-between space-y-4">
+                        <div id="modal-staff-wrapper">
+                            <label class="block text-sm font-bold text-slate-700 mb-1">Staff Member</label>
+                            <select id="modal-staff-name" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none bg-white shadow-sm"></select>
+                        </div>
+                        
+                        <div id="modal-site-wrapper" class="hidden">
+                            <label class="block text-sm font-bold text-slate-700 mb-1">Site</label>
+                            <select id="modal-pr-site" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-emerald-500 outline-none bg-white shadow-sm"></select>
+                        </div>
+                        
+                        <div id="modal-absence-type-wrapper" class="hidden">
+                            <label class="block text-sm font-bold text-slate-700 mb-1">Absence Type</label>
+                            <select id="modal-shift-type" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none bg-white shadow-sm">
+                            </select>
+                        </div>
+
+                        <div id="modal-np-type-wrapper" class="hidden">
+                            <label class="block text-sm font-bold text-slate-700 mb-1">Type</label>
+                            <select id="modal-np-shift-type" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none bg-white shadow-sm">
+                            </select>
+                        </div>
+
+                        <div id="modal-inpatient-type-wrapper" class="hidden">
+                            <label class="block text-sm font-bold text-slate-700 mb-1">Coverage Type</label>
+                            <select id="modal-inpatient-shift-type" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-teal-500 outline-none bg-white shadow-sm">
+                                <option value="AM Coverage">AM Coverage</option>
+                                <option value="PM Coverage">PM Coverage</option>
+                                <option value="Coverage 0830-1630">Coverage 0830-1630</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-900 mb-1">Start Date</label>
+                            <select id="modal-start-date" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none bg-white shadow-sm"></select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-900 mb-1">End Date</label>
+                            <select id="modal-end-date" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none bg-white shadow-sm"></select>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="modal-np-fields" class="hidden space-y-4 mt-6 border-t border-slate-100 pt-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Coverage Notes (Specific AM/PM details)</label>
+                        <input type="text" id="modal-np-notes" placeholder="e.g., Dr. Smith (AM) / Dr. Doe (PM)" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                </div>
+
+                <div id="modal-clinic-fields" class="hidden space-y-4 mt-6 border-t border-slate-100 pt-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Clinic Name</label>
+                        <input type="text" id="modal-clinic-name" placeholder="e.g., Lakeridge Health" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-purple-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Notes / Details (Optional)</label>
+                        <input type="text" id="modal-clinic-notes" placeholder="e.g., Covering AM only" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-purple-500 outline-none">
+                    </div>
+                </div>
+
+                <div id="modal-absence-fields" class="hidden mt-6">
+                    <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                        <div class="bg-slate-50 border-b border-slate-200 px-4 py-3 flex justify-between items-center">
+                            <label class="block text-sm font-bold text-slate-800">Site Coverages</label>
+                            <button type="button" onclick="addModalCoverage()" class="text-xs flex items-center gap-1.5 text-blue-600 hover:text-blue-700 font-bold bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-md border border-blue-100 transition-colors">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Coverage
+                            </button>
+                        </div>
+                        <div class="p-4 space-y-3 bg-slate-50/50 max-h-[300px] overflow-y-auto custom-scrollbar">
+                            <div id="modal-coverages-container" class="space-y-3"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="modal-peer-review-fields" class="hidden space-y-4 mt-6 border-t border-slate-100 pt-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Doctor 1 (Primary)</label>
+                            <select id="modal-pr-dr1" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-emerald-500 outline-none bg-white shadow-sm"></select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Doctor 2 (Optional)</label>
+                            <select id="modal-pr-dr2" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-emerald-500 outline-none bg-white shadow-sm"></select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 mt-8 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="closeModal()" class="flex-1 px-4 py-2 border border-slate-200 rounded-lg font-medium text-slate-600 hover:bg-slate-50 transition-colors">Cancel</button>
+                    <button type="submit" id="modal-submit-btn" class="flex-1 px-4 py-2 text-white rounded-lg font-bold transition-colors bg-blue-600 hover:bg-blue-700 shadow-sm">Save Entry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="hidden fixed inset-0 bg-black/50 items-center justify-center z-50 p-4 print-hidden">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-fade-in">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2"><i data-lucide="lock" class="w-5 h-5 text-slate-600"></i> Admin Sign In</h3>
+                <button type="button" onclick="closeLoginModal()" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form onsubmit="handleLogin(event)" class="p-6 space-y-4">
+                <div class="text-sm text-slate-500 mb-4 bg-blue-50 border border-blue-100 p-3 rounded-lg flex gap-2">
+                    <i data-lucide="info" class="w-5 h-5 text-blue-500 flex-shrink-0"></i>
+                    Sign in to modify the schedule or manage administrative settings.
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Username</label>
+                    <input type="text" id="login-username" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                    <input type="password" id="login-password" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div id="login-error" class="hidden text-red-500 text-sm font-medium bg-red-50 p-2 rounded border border-red-100">Invalid credentials. Please try again.</div>
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="closeLoginModal()" class="flex-1 px-4 py-2 border border-slate-200 rounded-lg font-medium text-slate-600 hover:bg-slate-50 transition-colors">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-2 text-white rounded-lg font-medium transition-colors bg-blue-600 hover:bg-blue-700 shadow-sm">Sign In</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notify Multiple Doctors Review Modal -->
+    <div id="notify-modal" class="hidden fixed inset-0 bg-black/50 items-center justify-center z-50 p-4 print-hidden">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2"><i data-lucide="bell-ring" class="w-5 h-5 text-emerald-600"></i> Review Notification Emails</h3>
+                <button type="button" onclick="closeNotifyModal()" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto custom-scrollbar flex-1 bg-slate-50/50" id="notify-modal-content"></div>
+            <div class="px-6 py-4 border-t border-slate-100 bg-white shrink-0 flex justify-end gap-3">
+                 <button type="button" onclick="closeNotifyModal()" class="px-4 py-2 border border-slate-200 rounded-lg font-medium text-slate-600 hover:bg-slate-50 transition-colors shadow-sm">Close Window</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notify Peer Review Modal -->
+    <div id="notify-peer-review-modal" class="hidden fixed inset-0 bg-black/50 items-center justify-center z-50 p-4 print-hidden">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl overflow-hidden animate-fade-in flex flex-col max-h-[90vh]">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2"><i data-lucide="calendar-plus" class="w-5 h-5 text-amber-600"></i> Generate Peer Review Invites</h3>
+                <button type="button" onclick="closeNotifyPeerReviewModal()" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto custom-scrollbar flex-1 bg-slate-50/50" id="notify-peer-review-modal-content"></div>
+            <div class="px-6 py-4 border-t border-slate-100 bg-white shrink-0 flex justify-end gap-3">
+                 <button type="button" onclick="closeNotifyPeerReviewModal()" class="px-4 py-2 border border-slate-200 rounded-lg font-medium text-slate-600 hover:bg-slate-50 transition-colors shadow-sm">Close Window</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONSTANTS & STATE ---
+        const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        const COVERAGE_REGEX = /(.+?):\s(.*?)\s\(([^)]+)\)(?:\s\[Notes:\s(.*)\])?/;
+        
+        // NEW UPDATED SCRIPT URL
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqArxNpdP9gYOkuiIDbnoTaV2rsJGFyKf-O4P_mKIA0y_QpPAeNbdPSi2rhScw2rk/exec"; 
+
+        let state = {
+            activeTab: 'dayview',
+            pendingTab: null,
+            config: {
+                sites: ['Breast', 'CNS', 'FSRT', 'H&N', 'Lung', 'GU', 'Gynae', 'GI', 'Sarcoma', 'Melanoma', 'Skin', 'Heme', 'Body SBRT', 'Other'],
+                peerReviewSites: ['Breast', 'CNS', 'FSRT', 'H&N', 'Lung', 'GU', 'Gynae', 'GI', 'Sarcoma', 'Melanoma', 'Skin'],
+                absenceTypes: [
+                    { id: 'early', label: 'Away AM' },
+                    { id: 'middle', label: 'Away PM' },
+                    { id: 'late', label: 'Sick' },
+                    { id: 'vacation', label: 'Off / Vacation' },
+                    { id: 'unavailable', label: 'Unavailable' },
+                    { id: 'inpatient', label: 'Inpatient Floor' }
+                ],
+                npTypes: [
+                    { id: 'early', label: 'Away AM' },
+                    { id: 'middle', label: 'Away PM' },
+                    { id: 'late', label: 'Sick' },
+                    { id: 'vacation', label: 'Off / Vacation' },
+                    { id: 'unavailable', label: 'Unavailable' },
+                    { id: 'inpatient', label: 'Inpatient Floor' },
+                    { id: 'review_am', label: 'Review AM' },
+                    { id: 'review_pm', label: 'Review PM' },
+                    { id: 'ccau', label: 'CCAU / Radiation Floor' }
+                ]
+            },
+            physicians: [],
+            emails: [],
+            schedules: [],
+            holidays: [],
+            onCall: [],
+            peerReviews: [], 
+            inpatientCalls: [],
+            calendarDate: new Date().toISOString().split('T')[0],
+            isSyncing: false,
+            isAuthenticated: false,
+            selectedCoverageId: null,
+            selectedDayViewCoverageId: null,
+            
+            modalType: 'absence',
+            modalGroup: 'MD',
+            editingId: null,
+            modalCoverages: []
+        };
+
+        const SHIFT_STYLES = {
+            early: { bg: 'bg-green-50', text: 'text-green-800', border: 'border-l-4 border-green-500' },
+            middle: { bg: 'bg-blue-50', text: 'text-blue-800', border: 'border-l-4 border-blue-500' },
+            late: { bg: 'bg-yellow-50', text: 'text-yellow-800', border: 'border-l-4 border-yellow-500' },
+            vacation: { bg: 'bg-red-50', text: 'text-red-800', border: 'border-l-4 border-red-500' },
+            unavailable: { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-l-4 border-slate-400' },
+            clinic: { bg: 'bg-purple-50', text: 'text-purple-800', border: 'border-l-4 border-purple-500' },
+            inpatient: { bg: 'bg-teal-50', text: 'text-teal-800', border: 'border-l-4 border-teal-500' },
+            review_am: { bg: 'bg-orange-50', text: 'text-orange-800', border: 'border-l-4 border-orange-500' },
+            review_pm: { bg: 'bg-pink-50', text: 'text-pink-800', border: 'border-l-4 border-pink-500' },
+            ccau: { bg: 'bg-cyan-50', text: 'text-cyan-800', border: 'border-l-4 border-cyan-500' },
+            default: { bg: 'bg-slate-50', text: 'text-slate-600', border: 'border-l-4 border-slate-300' }
+        };
+
+        function getShiftInfo(shiftId) {
+            const foundShift = state.config.absenceTypes.find(s => s.id === shiftId) || state.config.npTypes.find(s => s.id === shiftId);
+            const label = foundShift ? foundShift.label : (shiftId === 'clinic' ? 'Clinic Coverage' : 'Unknown');
+            
+            let style = SHIFT_STYLES[shiftId];
+            if (!style) {
+                const labelLower = (label || '').toLowerCase();
+                const idLower = (shiftId || '').toLowerCase();
+                if (labelLower.includes('am away') || idLower.includes('am away') || idLower.includes('early')) style = SHIFT_STYLES.early;
+                else if (labelLower.includes('pm away') || idLower.includes('pm away') || idLower.includes('middle')) style = SHIFT_STYLES.middle;
+                else if (labelLower.includes('sick') || idLower.includes('sick')) style = SHIFT_STYLES.late;
+                else if (labelLower.includes('vacation') || labelLower.includes('off') || idLower.includes('vacation')) style = SHIFT_STYLES.vacation;
+                else if (labelLower.includes('unavailable') || idLower.includes('unavailable')) style = SHIFT_STYLES.unavailable;
+                else if (labelLower.includes('clinic') || idLower.includes('clinic')) style = SHIFT_STYLES.clinic;
+                else style = SHIFT_STYLES.default;
+            }
+            return { label, ...style };
+        }
+
+        function getPagerDisplay(name) {
+            if(!name || name === 'Unassigned' || name === 'None') return '';
+            const phys = state.physicians.find(p => p.name === name);
+            if(phys && phys.pager) {
+                return `<div class="text-[11px] text-slate-600 font-semibold tracking-tight mt-0.5 whitespace-nowrap">Pager #: ${phys.pager}</div>`;
+            }
+            return '';
+        }
+
+        // Helper to cleanly map dropdown selections dynamically (eliminates text.replace() failure issues)
+        function getPhysOptionsHtml(selectedValue) {
+            const s = (selectedValue || '').trim();
+            return `<option value="">-- Select --</option>` + state.physicians.map(p => {
+                const isSelected = p.name === s ? 'selected' : '';
+                return `<option value="${p.name}" ${isSelected}>${p.name}</option>`;
+            }).join('');
+        }
+
+        // Helper to extract UC notes specifically
+        function getUCNotes(appointments) {
+            if (!appointments) return '';
+            if (appointments.includes(' | Notes: ')) return appointments.split(' | Notes: ')[1].trim();
+            if (appointments !== 'Urgent Care' && appointments !== 'Scheduled Off / Absence') return appointments.trim();
+            return '';
+        }
+
+        window.onload = () => {
+            document.getElementById('calendar-date-picker').value = state.calendarDate;
+            document.getElementById('dayview-date-picker').value = state.calendarDate;
+            const now = new Date();
+            document.getElementById('oncall-month-picker').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+
+            lucide.createIcons();
+            populateDropdowns();
+            updateAuthUI();
+            switchTab(state.activeTab);
+            loadScheduleData();
+        };
+
+        function switchTab(tabId) {
+            if (tabId === 'settings' && !state.isAuthenticated) {
+                state.pendingTab = 'settings';
+                document.getElementById('login-modal').classList.remove('hidden');
+                document.getElementById('login-modal').classList.add('flex');
+                return;
+            }
+            
+            state.pendingTab = null;
+            state.activeTab = tabId;
+
+            ['dayview', 'calendar', 'oncall', 'coverage', 'settings'].forEach(id => {
+                const view = document.getElementById(`view-${id}`);
+                const nav = document.getElementById(`nav-${id}`);
+                if(view) view.classList.add('hidden');
+                if(nav) nav.className = "nav-btn whitespace-nowrap flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-200";
+            });
+
+            const activeView = document.getElementById(`view-${tabId}`);
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if(activeView) activeView.classList.remove('hidden');
+            if(activeNav) activeNav.className = "nav-btn whitespace-nowrap flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all bg-white text-blue-700 shadow-sm";
+            
+            if (tabId === 'dayview') renderDayView();
+            if (tabId === 'calendar') renderCalendarView();
+            if (tabId === 'coverage') renderCoverageDoc();
+            if (tabId === 'settings') renderSettings();
+            if (tabId === 'oncall') renderCallTab();
+            lucide.createIcons();
+        }
+
+        function toggleAuth() {
+            if (state.isAuthenticated) {
+                state.isAuthenticated = false;
+                updateAuthUI();
+            } else {
+                document.getElementById('login-modal').classList.remove('hidden');
+                document.getElementById('login-modal').classList.add('flex');
+            }
+        }
+
+        function closeLoginModal() {
+            document.getElementById('login-modal').classList.add('hidden');
+            document.getElementById('login-modal').classList.remove('flex');
+            document.getElementById('login-username').value = '';
+            document.getElementById('login-password').value = '';
+            document.getElementById('login-error').classList.add('hidden');
+            state.pendingTab = null;
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('login-username').value;
+            const p = document.getElementById('login-password').value;
+            
+            if (u === 'RadOnc' && p === 'RadOnc') {
+                state.isAuthenticated = true;
+                closeLoginModal();
+                updateAuthUI();
+                if (state.pendingTab) switchTab(state.pendingTab);
+            } else {
+                document.getElementById('login-error').classList.remove('hidden');
+            }
+        }
+
+        function updateAuthUI() {
+            const authBtn = document.getElementById('auth-btn');
+            const authReqElems = document.querySelectorAll('.auth-required');
+
+            if (state.isAuthenticated) {
+                if(authBtn) {
+                    authBtn.innerHTML = '<i data-lucide="log-out" class="w-4 h-4"></i> Sign Out';
+                    authBtn.classList.remove('bg-slate-800', 'text-white');
+                    authBtn.classList.add('bg-slate-200', 'text-slate-700');
+                }
+                authReqElems.forEach(el => el.classList.remove('hidden'));
+            } else {
+                if(authBtn) {
+                    authBtn.innerHTML = '<i data-lucide="log-in" class="w-4 h-4"></i> Sign In';
+                    authBtn.classList.remove('bg-slate-200', 'text-slate-700');
+                    authBtn.classList.add('bg-slate-800', 'text-white');
+                }
+                authReqElems.forEach(el => el.classList.add('hidden'));
+                if (state.activeTab === 'settings') switchTab('dayview');
+            }
+            lucide.createIcons();
+            
+            if(state.activeTab === 'dayview') renderDayView();
+            if(state.activeTab === 'calendar') renderCalendarView();
+            if(state.activeTab === 'oncall') renderCallTab();
+        }
+
+        function populateDropdowns() {
+            if(document.getElementById('modal-staff-name')) document.getElementById('modal-staff-name').innerHTML = getPhysOptionsHtml();
+
+            if(document.getElementById('modal-shift-type')) document.getElementById('modal-shift-type').innerHTML = state.config.absenceTypes.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
+            if(document.getElementById('modal-np-shift-type')) document.getElementById('modal-np-shift-type').innerHTML = state.config.npTypes.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
+            
+            if(document.getElementById('modal-start-date')) {
+                const weekDates = getWeekDates(state.calendarDate);
+                const dateOptions = DAYS.map((d, i) => `<option value="${weekDates[i]}">${d} (${weekDates[i]})</option>`).join('');
+                document.getElementById('modal-start-date').innerHTML = dateOptions;
+                document.getElementById('modal-end-date').innerHTML = dateOptions;
+            }
+
+            if(document.getElementById('modal-pr-site')) {
+                document.getElementById('modal-pr-site').innerHTML = state.config.peerReviewSites.map(s => `<option value="${s}">${s}</option>`).join('');
+                document.getElementById('modal-pr-dr1').innerHTML = getPhysOptionsHtml();
+                document.getElementById('modal-pr-dr2').innerHTML = getPhysOptionsHtml();
+            }
+        }
+
+        function getWeekDates(dateStr) {
+            const dateObj = new Date(dateStr + 'T12:00:00');
+            const day = dateObj.getDay();
+            const diffToMonday = day === 0 ? -6 : 1 - day;
+            const dates = [];
+            for (let i = 0; i < 7; i++) {
+                const curDay = new Date(dateObj);
+                curDay.setDate(dateObj.getDate() + diffToMonday + i);
+                const yyyy = curDay.getFullYear();
+                const mm = String(curDay.getMonth() + 1).padStart(2, '0');
+                const dd = String(curDay.getDate()).padStart(2, '0');
+                dates.push(`${yyyy}-${mm}-${dd}`);
+            }
+            return dates;
+        }
+
+        async function loadScheduleData() {
+            if (!SCRIPT_URL || SCRIPT_URL.includes("YOUR_APPS_SCRIPT")) return;
+            setSyncing(true);
+            try {
+                let response = await fetch(`${SCRIPT_URL}?action=getData&t=${new Date().getTime()}`, {
+                    method: 'GET',
+                    cache: 'no-store'
+                });
+                
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                let text = await response.text();
+
+                if (text.trim().startsWith('<')) {
+                    response = await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({ action: "getData" })
+                    });
+                    text = await response.text();
+                }
+                
+                let data;
+                try {
+                    data = JSON.parse(text);
+                    if (data.status === 'success' && !data.schedules) {
+                        throw new Error("Missing data payload. Google Apps Script missing getData action fallback.");
+                    }
+                } catch(e) {
+                    throw new Error("Could not parse JSON response from the server.");
+                }
+
+                if (data.config) {
+                    if (data.config.sites) state.config.sites = data.config.sites;
+                    if (data.config.peerReviewSites) state.config.peerReviewSites = data.config.peerReviewSites;
+                    if (data.config.absenceTypes) state.config.absenceTypes = data.config.absenceTypes;
+                    if (data.config.npTypes) state.config.npTypes = data.config.npTypes;
+                }
+                
+                const schedulesData = data.schedules || [];
+                state.schedules = schedulesData.map(s => {
+                    const shift = s.Shift || s.shift || '';
+                    let group = s.Group || s.group || '';
+                    
+                    group = String(group).trim().toUpperCase();
+                    
+                    if (!group) {
+                        if (shift === 'urgent_care') group = 'UC';
+                        else if (shift === 'nurse_practitioner') group = 'NP';
+                        else group = 'MD';
+                    }
+                    return {
+                        ID: s.ID || s.id,
+                        Date: String(s.Date || s.date || '').split('T')[0].trim(),
+                        'Staff Name': s['Staff Name'] || s['Staff name'] || s.staffName || s.name || s.Name || '',
+                        Shift: shift,
+                        Group: group,
+                        Vacations: s.Vacations || s.vacations || 'No',
+                        Appointments: s.Appointments || s.appointments || ''
+                    };
+                });
+                
+                state.holidays = (data.holidays || []).map(h => ({ Date: String(h.Date || h.date || '').split('T')[0].trim() }));
+                
+                // Advanced robust mapping to catch all common permutations of Google Script backend JSON outputs, ignoring casing and symbols
+                state.onCall = (data.onCall || []).map(o => {
+                    let first = '', second = '';
+                    for (let key in o) {
+                        let k = String(key).toLowerCase().replace(/[^a-z0-9]/g, '');
+                        if (k.includes('1st') || k.includes('first')) first = o[key];
+                        if (k.includes('2nd') || k.includes('second')) second = o[key];
+                    }
+                    return {
+                        Date: String(o.Date || o.date || '').split('T')[0].trim(),
+                        FirstCall: String(first).trim(),
+                        SecondCall: String(second).trim()
+                    };
+                });
+                
+                state.inpatientCalls = (data.inpatientCalls || []).map(c => ({ 
+                    id: c.id || c.ID, 
+                    Date: String(c.Date || c.date || '').split('T')[0].trim(), 
+                    Name: String(c.Name || c.name || c['Staff Name'] || '').trim(), 
+                    Type: c.Type || c.type || '' 
+                }));
+                
+                state.peerReviews = (data.peerReviews || []).map(p => ({ 
+                    // Fallback to newly generated ID just in case existing sheet IDs were blank or misread
+                    id: p.id || p.ID || Date.now().toString() + Math.floor(Math.random() * 1000), 
+                    Date: String(p.Date || p.date || '').split('T')[0].trim(), 
+                    Site: p.Site || p.site, 
+                    Dr1: p.Dr1 || p.dr1 || '', 
+                    Dr2: p.Dr2 || p.dr2 || '' 
+                }));
+                
+                state.physicians = (data.physicians || []).map(p => ({ 
+                    name: String(p.Name || p.name || '').trim(), 
+                    email: p.Email || p.email || '', 
+                    pager: p.Pager || p.pager || '' 
+                }));
+                
+                state.emails = (data.emails || []).map(e => ({ name: e.Name || e.name, address: e.Address || e.address }));
+
+                populateDropdowns();
+                if(state.activeTab === 'dayview') renderDayView();
+                if(state.activeTab === 'calendar') renderCalendarView();
+                if(state.activeTab === 'coverage') renderCoverageDoc();
+                if(state.activeTab === 'settings') renderSettings();
+                if(state.activeTab === 'oncall') renderCallTab();
+            } catch (error) { 
+                console.error("Fetch Data Error:", error); 
+                const indicator = document.getElementById('sync-indicator');
+                if (indicator) {
+                    indicator.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-red-500"></i> <span class="text-red-500 font-bold">Sync Error</span>`;
+                    indicator.classList.remove('hidden');
+                    setTimeout(() => {
+                        indicator.classList.add('hidden');
+                        indicator.innerHTML = `<i data-lucide="activity" class="w-3.5 h-3.5"></i> Syncing...`;
+                    }, 4000);
+                }
+            } 
+            finally { setSyncing(false); }
+        }
+
+        async function sendToSheet(payload) {
+            if (!SCRIPT_URL || SCRIPT_URL.includes("YOUR_APPS_SCRIPT")) return;
+            setSyncing(true);
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload)
+                });
+            } catch (error) { console.error("Error updating sheet:", error); } 
+            finally { setSyncing(false); }
+        }
+
+        function setSyncing(isSyncing) {
+            state.isSyncing = isSyncing;
+            const el = document.getElementById('sync-indicator');
+            if(el) {
+                if (isSyncing) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            }
+        }
+
+        function openNotifyModal() {
+            const targetDate = state.calendarDate;
+            const [y, m, d] = targetDate.split('-');
+            const dateObj = new Date(y, m - 1, d);
+            const formattedDate = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+            
+            const coveringMap = {}; 
+
+            state.schedules.forEach(assign => {
+                if (assign.Date === targetDate && assign.Appointments && assign.Appointments.includes('Coverage ->')) {
+                    const absentDr = assign['Staff Name'];
+                    // Get shift details to pull the absence reason label and text color schema
+                    const shiftInfo = getShiftInfo(assign.Shift); 
+                    
+                    const covStr = assign.Appointments.split('Coverage -> ')[1];
+                    const parts = covStr.split(' | ');
+                    
+                    parts.forEach(p => {
+                        if (p.includes(`(${targetDate})`)) {
+                            const match = p.match(COVERAGE_REGEX);
+                            if (match) {
+                                const site = match[1].trim();
+                                const coveringDr = match[2].trim();
+                                const notes = match[4] ? match[4].trim() : '';
+                                
+                                if (!coveringMap[coveringDr]) {
+                                    const phys = state.physicians.find(phy => phy.name === coveringDr);
+                                    coveringMap[coveringDr] = { email: phys ? phys.email : '', coverages: [] };
+                                }
+                                coveringMap[coveringDr].coverages.push({ 
+                                    site, 
+                                    absent: absentDr, 
+                                    notes,
+                                    reason: shiftInfo.label,
+                                    reasonColor: shiftInfo.text
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+
+            const contentDiv = document.getElementById('notify-modal-content');
+            const docKeys = Object.keys(coveringMap);
+
+            if (docKeys.length === 0) {
+                contentDiv.innerHTML = `<div class="flex flex-col items-center justify-center h-full py-16 text-slate-400"><i data-lucide="inbox" class="w-12 h-12 mb-4 text-slate-300"></i><p class="text-base italic">No site coverages are mapped to covering doctors for ${formattedDate}.</p></div>`;
+            } else {
+                let html = `<div class="mb-6 text-sm text-blue-700 bg-blue-50 p-4 rounded-xl border border-blue-100 flex gap-3 items-start shadow-sm"><i data-lucide="info" class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5"></i> <p>Please review the generated emails below. Click <strong>"Outlook Web"</strong> to automatically launch Microsoft Outlook Web and populate the email ready to be sent.</p></div><div class="space-y-6">`;
+                
+                docKeys.forEach(dr => {
+                    const data = coveringMap[dr];
+                    const subject = `Rad Onc Coverage Reminder – ${formattedDate}`;
+                    
+                    // Two string builds: one plain text for the URL, one HTML for rendering exact visual styling.
+                    let plainTextBody = `Good morning ${dr},\n\nThis is your automated coverage reminder for ${formattedDate}.\n\nYou are covering the following site(s) today:\n\n`;
+                    let htmlPreviewBody = `Good morning ${dr},\n\nThis is your automated coverage reminder for ${formattedDate}.\n\nYou are covering the following site(s) today:\n\n`;
+                    
+                    data.coverages.forEach(c => { 
+                        // Text logic
+                        const reasonStr = c.reason ? `  ${c.reason.toUpperCase()}` : '';
+                        const notesStr = c.notes ? ` (Note: ${c.notes})` : '';
+                        plainTextBody += `  • ${c.site} — for ${c.absent}${reasonStr}${notesStr}\n`;
+                        
+                        // Styled HTML matching the image preview
+                        const coloredReason = c.reason ? `  <span class="${c.reasonColor} font-bold">${c.reason.toUpperCase()}</span>` : '';
+                        const coloredNotes = c.notes ? ` <span class="text-slate-500 italic">(Note: ${c.notes})</span>` : '';
+                        htmlPreviewBody += `  • ${c.site} — for ${c.absent}${coloredReason}${coloredNotes}\n`;
+                    });
+                    
+                    plainTextBody += `\nThank You\n\nThis is an automated message from the Rad Onc Coverage schedule.`;
+                    htmlPreviewBody += `\nThank You\n\nThis is an automated message from the Rad Onc Coverage schedule.`;
+
+                    const toEmail = data.email || '';
+                    // Pass only the plain text body to the URLs.
+                    const outlookLink = `https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(toEmail)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(plainTextBody)}`;
+                    const mailtoLink = `mailto:${toEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(plainTextBody)}`;
+
+                    // Render htmlPreviewBody visually in the div.
+                    html += `<div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden"><div class="bg-slate-50 border-b border-slate-200 px-5 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"><div><div class="font-bold text-slate-900 text-base flex items-center gap-2"><i data-lucide="user" class="w-4 h-4 text-slate-400"></i> ${dr}</div><div class="text-sm mt-1 flex items-center gap-2 text-slate-500"><span class="font-semibold text-slate-400 uppercase text-[10px] tracking-wider">To:</span> ${toEmail ? `<span class="text-blue-600">${toEmail}</span>` : '<span class="text-rose-500 font-semibold italic bg-rose-50 px-2 py-0.5 rounded">No email found in Settings</span>'}</div></div><div class="flex gap-2 w-full sm:w-auto"><a href="${mailtoLink}" class="flex-1 sm:flex-none justify-center bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm"><i data-lucide="mail" class="w-4 h-4 text-slate-400"></i> App</a><a href="${outlookLink}" target="_blank" class="flex-1 sm:flex-none justify-center bg-[#0f6cbd] hover:bg-[#0c5b9e] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm"><i data-lucide="external-link" class="w-4 h-4 opacity-80"></i> Outlook Web</a></div></div><div class="p-5 text-[13px] font-mono text-slate-700 whitespace-pre-wrap leading-relaxed">${htmlPreviewBody}</div></div>`;
+                });
+                
+                html += `</div>`;
+                contentDiv.innerHTML = html;
+            }
+
+            document.getElementById('notify-modal').classList.remove('hidden');
+            document.getElementById('notify-modal').classList.add('flex');
+            lucide.createIcons();
+        }
+
+        function closeNotifyModal() {
+            document.getElementById('notify-modal').classList.add('hidden');
+            document.getElementById('notify-modal').classList.remove('flex');
+        }
+
+        function openNotifyPeerReviewModal() {
+            const weekDates = getWeekDates(state.calendarDate);
+            const contentDiv = document.getElementById('notify-peer-review-modal-content');
+            
+            let html = `<div class="mb-6 text-sm text-amber-700 bg-amber-50 p-4 rounded-xl border border-amber-100 flex gap-3 items-start shadow-sm">
+                <i data-lucide="info" class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5"></i> 
+                <p>Generate calendar invites for Peer Review sites for the week of ${weekDates[0]}. Click <strong>"Outlook Web"</strong> to open a new calendar event. <em>Note: You must manually add attendees in Outlook.</em></p>
+            </div><div class="space-y-6">`;
+
+            state.config.peerReviewSites.forEach(site => {
+                const subject = `${site} Peer Review`;
+                
+                // Build a minimal HTML table for the URL body parameter
+                // This keeps it short enough to prevent the "AADSTS90015" error while retaining table formatting.
+                let simpleHtmlBody = `Please find the ${site} Peer Review schedule for the week of ${weekDates[0]} below:<br><br>`;
+                simpleHtmlBody += `<table border="1" cellpadding="8" style="border-collapse: collapse; font-family: sans-serif;"><tr>`;
+                
+                DAYS.slice(0, 5).forEach((day, index) => {
+                    const targetDate = weekDates[index];
+                    const entry = state.peerReviews.find(p => p.Date === targetDate && p.Site === site) || {};
+                    let drs = [];
+                    if (entry.Dr1) drs.push(entry.Dr1);
+                    if (entry.Dr2) drs.push(entry.Dr2);
+                    let assignment = drs.length > 0 ? drs.join(' and ') : 'Unassigned';
+                    simpleHtmlBody += `<td valign="top"><strong>${day} (${targetDate}):</strong> ${assignment}</td>`;
+                });
+                simpleHtmlBody += `</tr></table>`;
+                
+                // Deep link for Outlook Calendar Compose
+                const startDateStr = `${weekDates[0]}T12:00:00Z`;
+                const endDateStr = `${weekDates[0]}T13:00:00Z`;
+                
+                const outlookLink = `https://outlook.office.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(simpleHtmlBody)}&startdt=${encodeURIComponent(startDateStr)}&enddt=${encodeURIComponent(endDateStr)}`;
+
+                // Generate the HTML table explicitly for the visual modal display only
+                html += `
+                <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div class="bg-slate-50 border-b border-slate-200 px-5 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div class="font-bold text-slate-900 text-base flex items-center gap-2">
+                            <i data-lucide="microscope" class="w-5 h-5 text-emerald-600"></i> ${site}
+                        </div>
+                        <a href="${outlookLink}" target="_blank" class="w-full sm:w-auto justify-center bg-[#0f6cbd] hover:bg-[#0c5b9e] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm">
+                            <i data-lucide="calendar" class="w-4 h-4 opacity-80"></i> Outlook Web
+                        </a>
+                    </div>
+                    <div class="p-5 text-[13px] text-slate-700 bg-white overflow-x-auto">
+                        <div class="border border-slate-200 rounded-lg overflow-hidden">
+                            <table class="w-full text-left border-collapse min-w-[600px]">
+                                <thead>
+                                    <tr class="bg-slate-50 text-sm border-b border-slate-200">
+                                        <th class="py-2 px-3 font-semibold text-slate-600">Site</th>
+                                        ${DAYS.slice(0,5).map(d => `<th class="py-2 px-3 font-semibold text-slate-600 text-center">${d}</th>`).join('')}
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <tr>
+                                        <td class="py-2 px-3 font-bold text-slate-700 bg-slate-50">${site}</td>
+                                        ${DAYS.slice(0,5).map((d, i) => {
+                                            const entry = state.peerReviews.find(p => p.Date === weekDates[i] && p.Site === site) || {};
+                                            return `<td class="py-2 px-3 text-center align-top text-sm">
+                                                <div class="font-medium text-slate-800">${entry.Dr1 || '-'}</div>
+                                                ${entry.Dr2 ? `<div class="text-slate-500">${entry.Dr2}</div>` : ''}
+                                            </td>`;
+                                        }).join('')}
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            
+            html += `</div>`;
+            contentDiv.innerHTML = html;
+
+            document.getElementById('notify-peer-review-modal').classList.remove('hidden');
+            document.getElementById('notify-peer-review-modal').classList.add('flex');
+            lucide.createIcons();
+        }
+
+        function closeNotifyPeerReviewModal() {
+            document.getElementById('notify-peer-review-modal').classList.add('hidden');
+            document.getElementById('notify-peer-review-modal').classList.remove('flex');
+        }
+
+        function generateDailySummaryEmail() {
+            const targetDate = state.calendarDate;
+            const [y, m, d] = targetDate.split('-');
+            const dateObj = new Date(y, m - 1, d);
+            
+            const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+            const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+            let subject = `Rad Onc Daily Coverage`;
+            let body = `Date: ${dayName}, ${formattedDate}\n\n`;
+
+            body += `Rad Onc Coverage\n`;
+            const mdSchedules = state.schedules.filter(s => s.Date === targetDate && s.Group === 'MD');
+            let hasAway = false;
+
+            mdSchedules.forEach(assign => {
+                if (assign.Appointments && assign.Appointments.includes('Coverage ->')) {
+                    hasAway = true;
+                    body += `Rad Onc Away: ${assign['Staff Name']}\n`;
+                    const parts = assign.Appointments.split('Coverage -> ')[1].split(' | ');
+                    
+                    let siteAdded = false;
+                    parts.forEach(covStr => {
+                        if (covStr.includes(`(${targetDate})`)) {
+                            const match = covStr.match(COVERAGE_REGEX);
+                            if (match) {
+                                const notes = match[4] ? match[4].trim() : '';
+                                body += `${match[1].trim()}: ${match[2].trim()}${notes ? ` (Notes: ${notes})` : ''}\n`;
+                                siteAdded = true;
+                            }
+                        }
+                    });
+                    if (!siteAdded) body += `Site: Unassigned\n`;
+                    body += `\n`;
+                } else if (state.config.absenceTypes.map(t=>t.id).includes(assign.Shift) && assign.Shift !== 'clinic') {
+                    hasAway = true;
+                    body += `Rad Onc Away: ${assign['Staff Name']}\nSite: No specific coverage assigned\n\n`;
+                }
+            });
+
+            if (!hasAway) body += `No away doctors reported.\n\n`;
+
+            body += `Call Service\n`;
+            
+            const uc1 = state.schedules.find(s => s.Date === targetDate && s.Group === 'UC');
+            const uc2 = state.schedules.find(s => s.Date === targetDate && s.Group === 'UC2');
+            let ucList = [];
+            if(uc1 && uc1['Staff Name']) {
+                const n1 = getUCNotes(uc1.Appointments);
+                ucList.push(`${uc1['Staff Name']}${n1 ? ` - ${n1}` : ''}`);
+            }
+            if(uc2 && uc2['Staff Name']) {
+                const n2 = getUCNotes(uc2.Appointments);
+                ucList.push(`${uc2['Staff Name']}${n2 ? ` - ${n2}` : ''}`);
+            }
+            body += `Urgent Care Dr: ${ucList.length > 0 ? ucList.join(' / ') : 'Unassigned'}\n`;
+
+            const onCallEntry = (state.onCall || []).find(o => o.Date === targetDate) || {};
+            const call1 = onCallEntry.FirstCall || 'Unassigned';
+            const call2 = onCallEntry.SecondCall || 'Unassigned';
+            body += `Oncall Dr 1 and Dr 2: ${call1} and ${call2}\n`;
+
+            const inpatientEntries = (state.inpatientCalls || []).filter(c => c.Date === targetDate);
+            const inpatientDr = inpatientEntries.length > 0 ? inpatientEntries.map(e => e.Name).join(', ') : 'Unassigned';
+            body += `Inpatient Call Dr1: ${inpatientDr}\n\n`;
+
+            body += `Peer Review Coverage\n`;
+            
+            state.config.peerReviewSites.forEach(siteName => {
+                const prEntry = state.peerReviews.find(p => p.Date === targetDate && p.Site === siteName) || {};
+                let drString = prEntry.Dr1 ? prEntry.Dr1 : 'Unassigned';
+                if (prEntry.Dr2) drString += ` and ${prEntry.Dr2}`;
+                body += `${siteName}: ${drString}\n`;
+            });
+
+            const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            window.location.href = mailtoLink;
+        }
+
+        function changeCalendarDate(newDate) {
+            state.calendarDate = newDate;
+            state.selectedCoverageId = null;
+            state.selectedDayViewCoverageId = null;
+            const pCal = document.getElementById('calendar-date-picker');
+            const pDay = document.getElementById('dayview-date-picker');
+            if(pCal) pCal.value = newDate;
+            if(pDay) pDay.value = newDate;
+
+            populateDropdowns();
+            renderDayView();
+            renderCalendarView();
+            renderCoverageDoc();
+        }
+
+        function renderDayView() {
+            const targetDate = state.calendarDate;
+            const [y, m, d] = targetDate.split('-');
+            const dateObj = new Date(y, m - 1, d);
+            const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+            const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            const isHoliday = state.holidays.some(h => h.Date === targetDate);
+
+            const els = {
+                'dayview-main-day': dayName, 'dayview-main-date': formattedDate,
+                'dayview-np-day': dayName, 'dayview-np-date': formattedDate,
+                'dayview-uc-day': dayName.toUpperCase(), 'dayview-pr-day': dayName
+            };
+            for(let id in els) {
+                let el = document.getElementById(id);
+                if(el) el.innerText = els[id];
+            }
+
+            const mdSchedules = state.schedules.filter(s => s.Date === targetDate && s.Group === 'MD');
+            
+            let mdHtml = mdSchedules.map(assign => {
+                const shiftInfo = getShiftInfo(assign.Shift || 'vacation');
+                const hasCoverage = assign.Appointments && assign.Appointments.includes('Coverage ->');
+                const isSelected = state.selectedDayViewCoverageId == assign.ID;
+                const borderClass = isSelected ? 'ring-2 ring-indigo-500 shadow-md border-transparent' : shiftInfo.border;
+
+                // Add any missing general events and clinic details directly on the Day View block
+                let extraDetailsHTML = '';
+                if (assign.Shift === 'clinic' && assign.Appointments) {
+                    let clinicText = assign.Appointments.replace('Clinic -> ', '');
+                    extraDetailsHTML = `<div class="mt-1.5 p-1 bg-white/60 rounded text-[11px] font-medium border border-purple-200 text-purple-800 leading-tight">${clinicText}</div>`;
+                }
+
+                return `
+                <div class="p-3 rounded-lg bg-white border border-slate-100 shadow-sm ${shiftInfo.bg} ${borderClass} relative flex justify-between items-center ${isHoliday ? 'grayscale opacity-60' : ''}">
+                    <div class="w-full pr-2">
+                        <div class="text-[10px] font-bold uppercase mb-0.5 ${shiftInfo.text}">${shiftInfo.label}</div>
+                        <div class="font-bold text-sm text-slate-900">${assign['Staff Name']}</div>
+                        ${extraDetailsHTML}
+                    </div>
+                    <div class="flex flex-col gap-1 shrink-0 z-10">
+                        ${hasCoverage ? `
+                        <button onclick="viewDayCoverage('${assign.ID}', event)" class="bg-white border border-slate-300 text-slate-700 hover:text-indigo-600 hover:border-indigo-400 rounded p-1 shadow-sm transition-all flex items-center justify-center ${isSelected ? 'text-indigo-600 border-indigo-400' : ''}" title="View Site Coverage">
+                            <i data-lucide="play-square" class="w-5 h-5 stroke-[2.5]"></i>
+                        </button>` : '<div class="w-6 h-6 border-2 border-transparent rounded flex-shrink-0 bg-transparent"></div>'}
+                    </div>
+                </div>`;
+            }).join('');
+            if(mdSchedules.length === 0) mdHtml = `<div class="text-xs text-slate-400 italic py-4 text-center">No assignments</div>`;
+            document.getElementById('dayview-main-content').innerHTML = mdHtml;
+
+            const npSchedules = state.schedules.filter(s => s.Date === targetDate && s.Group === 'NP');
+            let npHtml = npSchedules.map(assign => {
+                const shiftInfo = getShiftInfo(assign.Shift || 'vacation');
+                const npNotesHtml = (assign.Appointments && assign.Appointments !== 'Scheduled Off / Absence' && assign.Appointments !== 'NP Assignment')
+                    ? `<div class="mt-2 text-xs text-indigo-700 bg-indigo-50/70 p-1.5 rounded font-medium border border-indigo-100">${assign.Appointments}</div>` : '';
+
+                return `
+                <div class="p-3 rounded-lg bg-white border border-slate-100 shadow-sm ${shiftInfo.bg} ${shiftInfo.border} relative flex flex-col justify-center ${isHoliday ? 'grayscale opacity-60' : ''}">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="text-[10px] font-bold uppercase mb-0.5 ${shiftInfo.text}">${shiftInfo.label}</div>
+                            <div class="font-bold text-sm text-slate-900">${assign['Staff Name']} <span class="text-xs font-semibold text-slate-500">(NP)</span></div>
+                        </div>
+                    </div>
+                    ${npNotesHtml}
+                </div>`;
+            }).join('');
+            if(npSchedules.length === 0) npHtml = `<div class="text-xs text-slate-400 italic py-4 text-center">No assignments</div>`;
+            document.getElementById('dayview-np-content').innerHTML = npHtml;
+
+            let siteHtml = '';
+            if (!state.selectedDayViewCoverageId) {
+                siteHtml = `<div class="text-sm text-slate-400 italic py-8 text-center border-2 border-dashed border-slate-100 rounded-xl w-full">Click the <i data-lucide="play-square" class="w-4 h-4 inline-block text-slate-500 mx-1 align-sub"></i> button on a schedule entry to view its site coverage.</div>`;
+                document.getElementById('dayview-site-title').innerText = `${dayName} Coverage`;
+            } else {
+                const assign = state.schedules.find(s => s.ID == state.selectedDayViewCoverageId);
+                if (!assign || !assign.Appointments || !assign.Appointments.includes('Coverage ->')) {
+                    siteHtml = `<div class="text-sm text-slate-400 italic py-8 text-center border-2 border-dashed border-slate-100 rounded-xl w-full">No site specific coverage details available for this entry.</div>`;
+                    document.getElementById('dayview-site-title').innerText = `Coverage Details`;
+                } else {
+                    const dailyCoverages = [];
+                    const parts = assign.Appointments.split('Coverage -> ')[1].split(' | ');
+                    parts.forEach(covStr => {
+                        if (covStr.includes(`(${targetDate})`)) {
+                            const match = covStr.match(COVERAGE_REGEX);
+                            if (match) dailyCoverages.push({ 
+                                site: match[1].trim(), 
+                                covering: match[2].trim(), 
+                                absent: assign['Staff Name'],
+                                notes: match[4] ? match[4].trim() : ''
+                            });
+                        }
+                    });
+
+                    if (dailyCoverages.length === 0) {
+                        siteHtml = `<div class="text-sm text-slate-400 italic py-8 text-center border-2 border-dashed border-slate-100 rounded-xl w-full">No site specific coverage mapped for this day.</div>`;
+                        document.getElementById('dayview-site-title').innerText = `Coverage Details`;
+                    } else {
+                        document.getElementById('dayview-site-title').innerText = `${assign['Staff Name']} Coverage`;
+                        siteHtml = dailyCoverages.map(cov => `
+                            <div class="bg-white border border-indigo-100 rounded-xl p-4 shadow-sm flex flex-col justify-between">
+                                <div class="font-bold text-indigo-700 text-xs uppercase tracking-wider mb-1">${cov.site}</div>
+                                <div class="text-slate-900 font-bold text-base leading-tight">${cov.covering}</div>
+                                ${cov.notes ? `<div class="text-xs text-slate-600 bg-slate-50 mt-2 p-2 rounded-lg border border-slate-200 flex items-start gap-1.5"><i data-lucide="file-text" class="w-3.5 h-3.5 mt-0.5 shrink-0 text-slate-400"></i> <span class="leading-relaxed">${cov.notes}</span></div>` : ''}
+                                <div class="text-[11px] text-slate-500 mt-3 flex items-center gap-1.5 border-t border-slate-50 pt-2">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span> Covering: ${cov.absent}
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+            }
+            document.getElementById('dayview-site-content').innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">${siteHtml}</div>`;
+
+            // Render UC multiple entries and append pagers
+            let ucContent = '';
+            const uc1Entry = state.schedules.find(s => s.Date === targetDate && s.Group === 'UC') || {};
+            const uc2Entry = state.schedules.find(s => s.Date === targetDate && s.Group === 'UC2') || {};
+            
+            if (uc1Entry['Staff Name']) {
+                const notes1 = getUCNotes(uc1Entry.Appointments);
+                ucContent += `<div class="flex flex-col items-center w-full">
+                    <span class="font-bold text-slate-900">${uc1Entry['Staff Name']}</span>
+                    ${notes1 ? `<span class="text-xs text-slate-500 italic text-center leading-tight mt-0.5 max-w-[90%]">${notes1}</span>` : ''}
+                    ${getPagerDisplay(uc1Entry['Staff Name'])}
+                </div>`;
+            }
+            if (uc2Entry['Staff Name']) {
+                const notes2 = getUCNotes(uc2Entry.Appointments);
+                ucContent += `<div class="flex flex-col items-center mt-3 pt-3 border-t border-slate-200 w-full">
+                    <span class="font-bold text-slate-900">${uc2Entry['Staff Name']}</span>
+                    ${notes2 ? `<span class="text-xs text-slate-500 italic text-center leading-tight mt-0.5 max-w-[90%]">${notes2}</span>` : ''}
+                    ${getPagerDisplay(uc2Entry['Staff Name'])}
+                </div>`;
+            }
+            if (!ucContent) ucContent = '<span class="text-slate-400 italic text-sm font-medium">Unassigned</span>';
+            document.getElementById('dayview-uc-content').innerHTML = ucContent;
+
+            // Render On-call with pagers properly color-matched
+            const onCallEntry = (state.onCall || []).find(o => o.Date === targetDate) || {};
+            const formatCall = (name) => name ? `<div class="font-bold text-[#0c315c]">${name}</div>${getPagerDisplay(name)}` : '<span class="text-slate-400 italic font-medium">None</span>';
+            
+            document.getElementById('dayview-oncall-1').innerHTML = formatCall(onCallEntry.FirstCall);
+            document.getElementById('dayview-oncall-2').innerHTML = formatCall(onCallEntry.SecondCall);
+
+            const prHtml = state.config.peerReviewSites.map(site => {
+                const entry = state.peerReviews.find(p => p.Date === targetDate && p.Site === site) || {};
+                const dr1 = entry.Dr1 || '<span class="text-slate-400 italic font-normal">Unassigned</span>';
+                const dr2 = entry.Dr2 || '<span class="text-slate-400 italic font-normal">Unassigned</span>';
+                return `
+                <tr class="hover:bg-slate-50/50 transition-colors">
+                    <td class="py-3 px-4 font-bold text-slate-700 align-top">${site}</td>
+                    <td class="py-3 px-4 text-right flex flex-col gap-1 text-sm font-semibold text-slate-800">
+                        <div>${dr1}</div>
+                        ${entry.Dr2 ? `<div class="text-slate-500">${dr2}</div>` : `<div class="text-slate-400 italic font-normal text-[11px]">Unassigned</div>`}
+                    </td>
+                </tr>`;
+            }).join('');
+            document.getElementById('dayview-pr-content').innerHTML = prHtml;
+            
+            lucide.createIcons();
+        }
+
+        function viewDayCoverage(id, event) {
+            event.stopPropagation();
+            state.selectedDayViewCoverageId = id;
+            renderDayView();
+        }
+
+        function renderCalendarView() {
+            renderUrgentCare();
+            renderScheduleGrids();
+            renderPeerReview();
+            renderCoverageSidebar();
+            lucide.createIcons();
+        }
+
+        function renderUrgentCare() {
+            const weekDates = getWeekDates(state.calendarDate);
+            const container = document.getElementById('urgent-care-grid');
+
+            const targetDateStr = state.calendarDate;
+            const onCallEntry = (state.onCall || []).find(o => o.Date === targetDateStr) || {};
+            const onCallDisplay = document.getElementById('urgent-care-oncall-display');
+            if(onCallDisplay) {
+                onCallDisplay.innerHTML = `
+                    <div class="flex items-center gap-1.5"><span class="text-xs text-[#829ab1] uppercase font-bold tracking-wider">ON-CALL 1ST CALL:</span> <span class="font-bold text-[#0c315c]">${onCallEntry.FirstCall || '<span class="text-slate-400 italic font-normal">None</span>'}</span></div>
+                    <div class="flex items-center gap-1.5"><span class="text-xs text-[#829ab1] uppercase font-bold tracking-wider">ON-CALL 2ND CALL:</span> <span class="font-bold text-[#0c315c]">${onCallEntry.SecondCall || '<span class="text-slate-400 italic font-normal">None</span>'}</span></div>
+                `;
+            }
+
+            container.innerHTML = DAYS.slice(0, 5).map((dayName, index) => {
+                const targetDate = weekDates[index];
+                
+                const uc1Entry = state.schedules.find(s => s.Date === targetDate && s.Group === 'UC') || {};
+                const uc2Entry = state.schedules.find(s => s.Date === targetDate && s.Group === 'UC2') || {};
+                
+                const uc1Notes = getUCNotes(uc1Entry.Appointments);
+                const uc2Notes = getUCNotes(uc2Entry.Appointments);
+
+                const control1 = state.isAuthenticated ? 
+                    `<div class="flex gap-1.5 mt-2">
+                        <select id="uc1-dr-${targetDate}" onchange="updateUrgentCareEntry('${targetDate}', 'UC')" class="w-1/2 border border-slate-300 rounded px-1.5 py-1 text-xs outline-none focus:border-rose-500 bg-white shadow-sm font-medium text-slate-800">
+                            ${getPhysOptionsHtml(uc1Entry['Staff Name'])}
+                        </select>
+                        <input type="text" id="uc1-note-${targetDate}" onchange="updateUrgentCareEntry('${targetDate}', 'UC')" value="${uc1Notes}" placeholder="Free Text" class="w-1/2 border border-slate-300 rounded px-2 py-1 text-xs outline-none focus:border-rose-500 bg-white shadow-sm placeholder:text-slate-400">
+                    </div>` : 
+                    `<div class="mt-2 text-center border border-slate-100 rounded bg-slate-50/50 p-1">
+                        <div class="text-sm font-semibold text-slate-800">${uc1Entry['Staff Name'] || '<span class="text-slate-400 font-normal italic">Unassigned</span>'}</div>
+                        ${uc1Notes ? `<div class="text-[10px] text-slate-500 italic mt-0.5 leading-tight">${uc1Notes}</div>` : ''}
+                    </div>`;
+
+                const control2 = state.isAuthenticated ? 
+                    `<div class="flex gap-1.5 mt-2 pt-2 border-t border-slate-100">
+                        <select id="uc2-dr-${targetDate}" onchange="updateUrgentCareEntry('${targetDate}', 'UC2')" class="w-1/2 border border-slate-300 rounded px-1.5 py-1 text-xs outline-none focus:border-rose-500 bg-white shadow-sm font-medium text-slate-800">
+                            ${getPhysOptionsHtml(uc2Entry['Staff Name'])}
+                        </select>
+                        <input type="text" id="uc2-note-${targetDate}" onchange="updateUrgentCareEntry('${targetDate}', 'UC2')" value="${uc2Notes}" placeholder="Free Text" class="w-1/2 border border-slate-300 rounded px-2 py-1 text-xs outline-none focus:border-rose-500 bg-white shadow-sm placeholder:text-slate-400">
+                    </div>` : 
+                    (uc2Entry['Staff Name'] ? `<div class="mt-2 text-center border border-slate-100 rounded bg-slate-50/50 p-1">
+                        <div class="text-sm font-semibold text-slate-800">${uc2Entry['Staff Name']}</div>
+                        ${uc2Notes ? `<div class="text-[10px] text-slate-500 italic mt-0.5 leading-tight">${uc2Notes}</div>` : ''}
+                    </div>` : '');
+
+                return `
+                    <div class="bg-white border border-slate-200 rounded-xl p-3 shadow-sm flex flex-col justify-start">
+                        <div class="text-[11px] font-bold text-slate-500 uppercase mb-1">${dayName}</div>
+                        <div class="text-[10px] font-bold text-rose-500 uppercase tracking-widest opacity-80 mb-1 border-b border-rose-100 pb-1">Urgent Care</div>
+                        ${control1}
+                        ${control2}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function updateUrgentCareEntry(date, group) {
+            const drId = group === 'UC' ? `uc1-dr-${date}` : `uc2-dr-${date}`;
+            const noteId = group === 'UC' ? `uc1-note-${date}` : `uc2-note-${date}`;
+
+            const staffName = document.getElementById(drId).value;
+            const notes = document.getElementById(noteId).value;
+
+            let entry = state.schedules.find(s => s.Date === date && s.Group === group);
+            
+            let appointmentText = 'Urgent Care';
+            if (notes) appointmentText += ` | Notes: ${notes}`;
+
+            if (entry) {
+                if(staffName === "") {
+                    // Delete entry if doctor is cleared
+                    state.schedules = state.schedules.filter(s => s.ID !== entry.ID);
+                    await sendToSheet({ action: "deleteSchedule", id: entry.ID });
+                } else {
+                    entry['Staff Name'] = staffName;
+                    entry.Appointments = appointmentText;
+                    await sendToSheet({ action: "addSchedule", data: { id: entry.ID, date, name: staffName, shift: 'urgent_care', vacations: 'No', appointments: appointmentText, group: group } });
+                }
+            } else if (staffName !== "") {
+                const newId = Date.now().toString() + Math.floor(Math.random()*100);
+                const newEntry = { ID: newId, Date: date, 'Staff Name': staffName, Shift: 'urgent_care', Group: group, Appointments: appointmentText, Vacations: 'No' };
+                state.schedules.push(newEntry);
+                await sendToSheet({ action: "addSchedule", data: { id: newEntry.ID, date, name: staffName, shift: 'urgent_care', vacations: 'No', appointments: appointmentText, group: group } });
+            }
+            
+            // Re-render specifically related components to reflect local edits immediately across views
+            if (state.activeTab === 'dayview') renderDayView();
+        }
+
+        async function toggleHoliday(targetDateStr) {
+            const isCurrentlyHoliday = state.holidays.some(h => h.Date === targetDateStr);
+            if (isCurrentlyHoliday) state.holidays = state.holidays.filter(h => h.Date !== targetDateStr);
+            else state.holidays.push({ Date: targetDateStr });
+            
+            renderScheduleGrids();
+            await sendToSheet({ action: "toggleHoliday", date: targetDateStr });
+        }
+
+        async function deleteEntry(id, event) {
+            if(event) event.stopPropagation();
+            state.schedules = state.schedules.filter(s => s.ID != id);
+            if(state.selectedCoverageId == id) state.selectedCoverageId = null;
+            renderCalendarView();
+            await sendToSheet({ action: "deleteSchedule", id: id });
+        }
+
+        function viewCoverage(id, event) {
+            event.stopPropagation();
+            state.selectedCoverageId = id;
+            renderScheduleGrids(); 
+            renderCoverageSidebar();
+        }
+
+        function renderScheduleGrids() {
+            const weekDates = getWeekDates(state.calendarDate);
+            const currentWeekHolidays = state.holidays.map(h => h.Date);
+            
+            const renderBlocks = (groupType) => {
+                const daysToRender = groupType === 'NP' ? DAYS.slice(0, 5) : DAYS;
+                return daysToRender.map((dayName, index) => {
+                    const targetDate = weekDates[index];
+                    const [y, m, d] = targetDate.split('-');
+                    const displayDateObj = new Date(y, m - 1, d);
+                    const formattedDate = displayDateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    const isHoliday = currentWeekHolidays.includes(targetDate);
+                    const isWeekend = index > 4;
+                    
+                    let daySchedules = state.schedules.filter(a => a.Date === targetDate && a.Group === groupType);
+
+                    let schedulesHTML = daySchedules.map(assign => {
+                        const shiftInfo = getShiftInfo(assign.Shift || 'vacation');
+                        const hasCoverage = assign.Appointments && assign.Appointments.includes('Coverage ->');
+                        const isSelected = state.selectedCoverageId == assign.ID;
+                        const borderClass = isSelected ? 'ring-2 ring-indigo-500 shadow-md border-transparent' : shiftInfo.border;
+                        
+                        let extraDetailsHTML = '';
+                        if (assign.Shift === 'clinic' && assign.Appointments) {
+                            let clinicText = assign.Appointments.replace('Clinic -> ', '');
+                            extraDetailsHTML = `<div class="mt-1.5 p-1 bg-white/60 rounded text-[11px] font-medium border border-purple-200 text-purple-800 leading-tight">${clinicText}</div>`;
+                        } else if (groupType === 'NP' && assign.Appointments && assign.Appointments !== 'Scheduled Off / Absence' && assign.Appointments !== 'NP Assignment') {
+                            extraDetailsHTML = `<div class="mt-1.5 p-1 bg-white/60 rounded text-[11px] font-medium border border-indigo-200 text-indigo-800 leading-tight">${assign.Appointments}</div>`;
+                        }
+                        
+                        return `
+                            <div ${state.isAuthenticated ? `onclick="editSchedule('${assign.ID}')"` : ''} class="p-3 rounded-lg relative group ${state.isAuthenticated ? 'cursor-pointer hover:shadow-md transition-all' : ''} ${shiftInfo.bg} ${borderClass} ${isHoliday ? 'grayscale opacity-50' : ''}">
+                                <div class="flex justify-between items-center">
+                                    <div class="w-full pr-2">
+                                        <div class="text-[10px] font-bold uppercase opacity-80 mb-0.5 ${shiftInfo.text}">${shiftInfo.label}</div>
+                                        <div class="font-bold text-slate-900 leading-tight text-sm">${assign['Staff Name']}</div>
+                                        ${extraDetailsHTML}
+                                    </div>
+                                    <div class="flex flex-col gap-1 shrink-0 z-10">
+                                        ${hasCoverage ? `
+                                        <button onclick="viewCoverage('${assign.ID}', event)" class="bg-white border border-slate-300 text-slate-700 hover:text-indigo-600 hover:border-indigo-400 rounded p-1 shadow-sm transition-all flex items-center justify-center ${isSelected ? 'text-indigo-600 border-indigo-400' : ''}" title="View Site Coverage">
+                                            <i data-lucide="play-square" class="w-5 h-5 stroke-[2.5]"></i>
+                                        </button>` : ''}
+                                        ${(!isHoliday && state.isAuthenticated) ? `
+                                        <button onclick="deleteEntry('${assign.ID}', event)" class="text-slate-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity bg-white/50 hover:bg-white rounded p-1 flex items-center justify-center mt-1">
+                                            <i data-lucide="x" class="w-4 h-4"></i>
+                                        </button>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    if (daySchedules.length === 0 && !isHoliday) {
+                        schedulesHTML = `<div class="text-slate-400 text-xs italic text-center py-4">No assignments</div>`;
+                    }
+
+                    return `
+                        <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col transition-all duration-300 ${(isHoliday || isWeekend) ? 'bg-slate-50 opacity-90' : ''}">
+                            <div class="${isWeekend ? 'bg-slate-100' : 'bg-slate-50'} border-b border-slate-200 p-3 flex justify-between items-center">
+                                <div class="flex flex-col">
+                                    <span class="font-bold text-slate-700">${dayName}</span>
+                                    <span class="text-xs font-medium text-slate-500">${formattedDate}</span>
+                                </div>
+                                ${groupType === 'MD' ? (state.isAuthenticated ? `
+                                <button onclick="toggleHoliday('${targetDate}')" class="text-[10px] px-2 py-1 rounded border font-bold uppercase tracking-wider transition-colors ${isHoliday ? 'text-red-600 bg-red-100 border-red-200' : 'text-slate-400 border-slate-300 hover:border-red-400 hover:text-red-500 bg-white'}">
+                                    Holiday
+                                </button>` : `
+                                ${isHoliday ? `<span class="text-[10px] px-2 py-1 rounded border font-bold uppercase tracking-wider text-red-600 bg-red-100 border-red-200">Holiday</span>` : ''}
+                                `) : ''}
+                            </div>
+                            <div class="p-3 space-y-3 flex-grow relative min-h-[120px]">
+                                ${isHoliday && groupType === 'MD' ? `<div class="absolute inset-0 flex items-center justify-center pointer-events-none z-10"><div class="rotate-[-15deg] text-slate-300 font-black text-2xl opacity-40 select-none text-center leading-none">CLOSED</div></div>` : ''}
+                                ${schedulesHTML}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            };
+
+            document.getElementById('main-calendar-grid').innerHTML = renderBlocks('MD');
+            document.getElementById('np-calendar-grid').innerHTML = renderBlocks('NP');
+        }
+
+        function renderPeerReview() {
+            const weekDates = getWeekDates(state.calendarDate);
+            const tbody = document.getElementById('peer-review-tbody');
+
+            let html = '';
+            state.config.peerReviewSites.forEach(site => {
+                html += `<tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                    <td class="py-3 px-4 font-bold text-slate-700 text-sm whitespace-nowrap bg-slate-50 sticky left-0 shadow-[2px_0_5px_rgba(0,0,0,0.02)] z-10">${site}</td>`;
+
+                DAYS.slice(0, 5).forEach((dayName, index) => {
+                    const targetDate = weekDates[index];
+                    const entry = state.peerReviews.find(p => p.Date === targetDate && p.Site === site) || {};
+
+                    const s1 = state.isAuthenticated ?
+                        `<select onchange="updatePeerReview('${targetDate}', '${site}', 'Dr1', this.value)" class="w-full text-xs font-medium border border-slate-200 rounded px-2 py-1.5 mb-1.5 outline-none focus:border-emerald-50 bg-white shadow-sm">${getPhysOptionsHtml(entry.Dr1)}</select>` :
+                        `<div class="text-xs font-medium text-slate-800 p-1 mb-1 border border-transparent">${entry.Dr1 || '<span class="text-slate-400 italic font-normal">Unassigned</span>'}</div>`;
+
+                    const s2 = state.isAuthenticated ?
+                        `<select onchange="updatePeerReview('${targetDate}', '${site}', 'Dr2', this.value)" class="w-full text-xs font-medium border border-slate-200 rounded px-2 py-1.5 outline-none focus:border-emerald-500 bg-white shadow-sm">${getPhysOptionsHtml(entry.Dr2)}</select>` :
+                        `<div class="text-xs font-medium text-slate-800 p-1 border border-transparent">${entry.Dr2 || '<span class="text-slate-400 italic font-normal">Unassigned</span>'}</div>`;
+
+                    html += `<td class="py-2 px-3 min-w-[150px] align-top bg-white">${s1}${s2}</td>`;
+                });
+                html += `</tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+
+        async function updatePeerReview(date, site, field, value) {
+            let entry = state.peerReviews.find(p => p.Date === date && p.Site === site);
+            if (!entry) {
+                entry = { id: Date.now().toString() + Math.floor(Math.random() * 100), Date: date, Site: site, Dr1: '', Dr2: '' };
+                state.peerReviews.push(entry);
+            } else if (!entry.id) {
+                entry.id = Date.now().toString() + Math.floor(Math.random() * 100);
+            }
+            entry[field] = value;
+            
+            await sendToSheet({ 
+                action: "savePeerReview", 
+                data: { 
+                    id: entry.id, ID: entry.id,
+                    date: date, Date: date, 
+                    site: site, Site: site, 
+                    dr1: entry.Dr1 || "", Dr1: entry.Dr1 || "", 
+                    dr2: entry.Dr2 || "", Dr2: entry.Dr2 || "" 
+                } 
+            });
+        }
+
+        function renderCoverageSidebar() {
+            const sidebar = document.getElementById('coverage-sidebar-content');
+            if(!sidebar) return;
+
+            if (!state.selectedCoverageId) {
+                sidebar.innerHTML = `<div class="text-sm text-slate-400 italic text-center py-12">Click the <i data-lucide="play-square" class="w-4 h-4 inline-block text-slate-500 mx-1 align-sub"></i> button on a schedule entry to view its site coverage.</div>`;
+                return;
+            }
+
+            const assign = state.schedules.find(s => s.ID == state.selectedCoverageId);
+            if (!assign || !assign.Appointments || !assign.Appointments.includes('Coverage ->')) {
+                sidebar.innerHTML = `<div class="text-sm text-slate-400 italic text-center py-12">No specific site coverage details available for this entry.</div>`;
+                return;
+            }
+
+            const targetDate = assign.Date;
+            const [y, m, d] = targetDate.split('-');
+            const displayDateObj = new Date(y, m - 1, d);
+            const dayName = displayDateObj.toLocaleDateString('en-US', { weekday: 'long' });
+
+            const dailyCoverages = [];
+            const parts = assign.Appointments.split('Coverage -> ')[1];
+            const individualCoverages = parts.split(' | ');
+            individualCoverages.forEach(covStr => {
+                if (covStr.includes(`(${targetDate})`)) {
+                    const match = covStr.match(COVERAGE_REGEX);
+                    if (match) dailyCoverages.push({ 
+                        site: match[1].trim(), 
+                        covering: match[2].trim(), 
+                        absent: assign['Staff Name'],
+                        notes: match[4] ? match[4].trim() : '' 
+                    });
+                }
+            });
+
+            if (dailyCoverages.length === 0) {
+                sidebar.innerHTML = `<div class="text-sm text-slate-400 italic text-center py-12">No site specific coverage mapped for this day.</div>`;
+                return;
+            }
+
+            let html = `<div class="font-bold text-slate-800 text-[13px] mb-4 border-b border-slate-100 pb-2">${dayName} Coverage</div>`;
+            html += `<div class="space-y-3">` + dailyCoverages.map(cov => `
+                <div class="bg-white border border-indigo-100 rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="font-bold text-indigo-700 text-[11px] uppercase tracking-wider mb-1">${cov.site}</div>
+                    <div class="text-slate-900 font-bold text-sm leading-tight">${cov.covering}</div>
+                    ${cov.notes ? `<div class="text-[11px] text-slate-600 bg-slate-50 mt-2 p-1.5 rounded border border-slate-200 flex items-start gap-1.5"><i data-lucide="file-text" class="w-3 h-3 mt-0.5 shrink-0 text-slate-400"></i> <span class="leading-relaxed">${cov.notes}</span></div>` : ''}
+                    <div class="text-[11px] text-slate-500 mt-2 flex items-center gap-1.5 border-t border-slate-50 pt-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span> Covering: ${cov.absent}
+                    </div>
+                </div>
+            `).join('') + `</div>`;
+
+            sidebar.innerHTML = html;
+        }
+
+        function renderCallTab() {
+            renderOnCall();
+            renderInpatientCall();
+        }
+
+        function renderInpatientCall() {
+            const weekDates = getWeekDates(state.calendarDate);
+            const container = document.getElementById('inpatient-call-grid');
+            if(!container) return;
+
+            container.innerHTML = DAYS.map((dayName, index) => {
+                const targetDate = weekDates[index];
+                const displayDateObj = new Date(targetDate + 'T12:00:00');
+                const formattedDate = displayDateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                const isWeekend = index > 4;
+
+                const entries = (state.inpatientCalls || []).filter(c => c.Date === targetDate);
+                
+                let entriesHTML = entries.map(call => `
+                    <div class="p-3 rounded-lg bg-teal-50 border-l-4 border-teal-500 shadow-sm relative group mb-2">
+                        <div class="flex justify-between items-start">
+                            <div class="w-full">
+                                <div class="text-[10px] font-bold uppercase text-teal-800 mb-0.5">${call.Type}</div>
+                                <div class="font-bold text-sm text-slate-900">${call.Name}</div>
+                                ${getPagerDisplay(call.Name)}
+                            </div>
+                            ${state.isAuthenticated ? `
+                            <button onclick="deleteInpatientCall('${call.id || call.ID}', event)" class="text-slate-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity bg-white/50 hover:bg-white rounded p-1 flex items-center justify-center -mr-1 -mt-1">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+
+                if (entries.length === 0) {
+                    entriesHTML = `<div class="text-slate-400 text-xs italic text-center py-4">No assignments</div>`;
+                }
+
+                return `
+                    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col transition-all duration-300 ${isWeekend ? 'bg-slate-50 opacity-90' : ''}">
+                        <div class="${isWeekend ? 'bg-slate-100' : 'bg-slate-50'} border-b border-slate-200 p-3 flex flex-col">
+                            <span class="font-bold text-slate-700">${dayName}</span>
+                            <span class="text-xs font-medium text-slate-500">${formattedDate}</span>
+                        </div>
+                        <div class="p-3 flex-grow relative min-h-[120px]">
+                            ${entriesHTML}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        async function deleteInpatientCall(id, event) {
+            if(event) event.stopPropagation();
+            state.inpatientCalls = state.inpatientCalls.filter(c => (c.id || c.ID) != id);
+            renderCallTab();
+            renderCoverageDoc();
+            await sendToSheet({ action: "deleteInpatientCall", id: id, ID: id });
+        }
+
+        function renderOnCall() {
+            const picker = document.getElementById('oncall-month-picker');
+            if(picker && !picker.value) {
+                const now = new Date(); picker.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+            }
+            if(!picker) return;
+            const [year, month] = picker.value.split('-');
+            const daysInMonth = new Date(year, month, 0).getDate();
+
+            let html = '';
+            for(let d = 1; d <= daysInMonth; d++) {
+                const dateStr = `${year}-${month}-${String(d).padStart(2,'0')}`;
+                const dateObj = new Date(year, month - 1, d);
+                const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+                const entry = (state.onCall || []).find(o => o.Date === dateStr) || {};
+                const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+                
+                html += `<tr class="${isWeekend ? 'bg-slate-50' : 'bg-white'} hover:bg-slate-100 transition-colors">
+                    <td class="py-2 px-4 whitespace-nowrap"><div class="flex items-center gap-2"><span class="font-medium text-slate-900 w-6 text-right">${d}</span><span class="text-xs font-bold text-slate-500 uppercase">${dayName}</span></div></td>
+                    <td class="py-2 px-4"><select onchange="updateOnCall('${dateStr}', 'FirstCall', this.value)" class="w-full border border-slate-300 rounded-md px-3 py-1.5 text-sm outline-none bg-white">${getPhysOptionsHtml(entry.FirstCall)}</select></td>
+                    <td class="py-2 px-4"><select onchange="updateOnCall('${dateStr}', 'SecondCall', this.value)" class="w-full border border-slate-300 rounded-md px-3 py-1.5 text-sm outline-none bg-white">${getPhysOptionsHtml(entry.SecondCall)}</select></td></tr>`;
+            }
+            document.getElementById('oncall-tbody').innerHTML = html;
+        }
+
+        async function updateOnCall(date, field, value) {
+            let entry = state.onCall.find(o => o.Date === date);
+            if(!entry) { entry = { Date: date, FirstCall: '', SecondCall: '' }; state.onCall.push(entry); }
+            entry[field] = value;
+            
+            renderDayView();
+            renderCalendarView();
+            renderCoverageDoc();
+
+            await sendToSheet({ 
+                action: 'saveOnCall', 
+                data: { 
+                    date, Date: date,
+                    firstCall: entry.FirstCall, FirstCall: entry.FirstCall, "1st Call": entry.FirstCall, "1stCall": entry.FirstCall,
+                    secondCall: entry.SecondCall, SecondCall: entry.SecondCall, "2nd Call": entry.SecondCall, "2ndCall": entry.SecondCall
+                } 
+            });
+        }
+
+        function renderCoverageDoc() {
+            const weekDates = getWeekDates(state.calendarDate);
+            const weekStart = new Date(weekDates[0] + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+            const docElement = document.getElementById('doc-week-start');
+            if(docElement) docElement.innerText = weekStart;
+
+            let finalHtml = '';
+
+            const docGroups = {};
+            state.schedules.filter(s => weekDates.includes(s.Date) && state.config.absenceTypes.map(t=>t.id).includes(s.Shift)).forEach(s => {
+                const docName = s['Staff Name'] + (s.Group === 'NP' ? ' (NP)' : '');
+                if (!docGroups[docName]) docGroups[docName] = { dates: [], coverages: {} };
+                const dateStr = new Date(s.Date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                if (!docGroups[docName].dates.includes(dateStr)) docGroups[docName].dates.push(dateStr);
+
+                if (s.Appointments && s.Appointments.includes('Coverage ->')) {
+                    s.Appointments.split('Coverage -> ')[1].split(' | ').forEach(item => {
+                        const match = item.match(COVERAGE_REGEX);
+                        if (match) {
+                            const site = match[1].trim(), coveringDr = match[2].trim(), dateVal = match[3].trim();
+                            const notes = match[4] ? match[4].trim() : '';
+                            const dayOfWeek = new Date(dateVal + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' });
+                            
+                            if (!docGroups[docName].coverages[site]) docGroups[docName].coverages[site] = [];
+                            const coverageEntry = `${coveringDr} (${dayOfWeek})${notes ? ` [Notes: ${notes}]` : ''}`;
+                            
+                            if (!docGroups[docName].coverages[site].includes(coverageEntry)) {
+                                docGroups[docName].coverages[site].push(coverageEntry);
+                            }
+                        }
+                    });
+                }
+            });
+
+            finalHtml += `<h3 class="text-xl font-bold mb-4 border-b border-slate-300 pb-2">Absences and Site Coverage</h3>`;
+            const sortedDoctors = Object.keys(docGroups).sort();
+            if (sortedDoctors.length === 0) {
+                finalHtml += `<div class="py-2 text-slate-500 italic font-serif">No absences or coverages scheduled for this week.</div>`;
+            } else {
+                finalHtml += sortedDoctors.map(docName => {
+                    const data = docGroups[docName];
+                    let coveragesHTML = `<div class="pl-8 text-slate-500 italic text-sm">No specific site coverage designated.</div>`;
+                    if (Object.keys(data.coverages).length > 0) {
+                        coveragesHTML = `<div class="pl-8"><div class="grid grid-cols-[100px_1fr] gap-x-2"><div class="font-semibold text-slate-800">Coverage &ndash;</div><div>` + 
+                            Object.keys(data.coverages).sort().map(site => `<div class="mb-1"><span class="font-semibold">${site}:</span> ${data.coverages[site].join(' / ')}</div>`).join('') + 
+                        `</div></div></div>`;
+                    }
+                    return `<div class="mb-6 break-inside-avoid"><div class="font-bold mb-1">Absent: <span class="underline">${docName}</span> (away ${data.dates.join(', ')})</div>${coveragesHTML}</div>`;
+                }).join('');
+            }
+
+            finalHtml += `<h3 class="text-xl font-bold mb-4 mt-8 border-b border-slate-300 pb-2">Urgent Care</h3><div class="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6">`;
+            weekDates.forEach(date => {
+                const e1 = state.schedules.find(s => s.Date === date && s.Group === 'UC');
+                const e2 = state.schedules.find(s => s.Date === date && s.Group === 'UC2');
+                const dayName = new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' });
+                
+                let ucList = [];
+                if (e1 && e1['Staff Name']) {
+                    const notes1 = getUCNotes(e1.Appointments);
+                    ucList.push(`${e1['Staff Name']}${notes1 ? ` (${notes1})` : ''}`);
+                }
+                if (e2 && e2['Staff Name']) {
+                    const notes2 = getUCNotes(e2.Appointments);
+                    ucList.push(`${e2['Staff Name']}${notes2 ? ` (${notes2})` : ''}`);
+                }
+                
+                if (ucList.length > 0) {
+                    finalHtml += `<div class="break-inside-avoid mb-1"><span class="font-bold w-32 inline-block align-top">${dayName}:</span> <span class="inline-block w-[calc(100%-8rem)]">${ucList.join('<br>')}</span></div>`;
+                }
+            });
+            finalHtml += `</div>`;
+
+            finalHtml += `<h3 class="text-xl font-bold mb-4 mt-8 border-b border-slate-300 pb-2">Nurse Practitioner Roles</h3><div class="space-y-3">`;
+            weekDates.forEach(date => {
+                const entries = state.schedules.filter(s => s.Date === date && s.Group === 'NP');
+                const dayName = new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' });
+                if (entries.length > 0) {
+                    let roleStrings = entries.map((e, idx) => {
+                        let noteText = (e.Appointments && e.Appointments !== 'Scheduled Off / Absence' && e.Appointments !== 'NP Assignment') 
+                            ? ` <span class="ml-2 font-semibold">${e.Appointments}</span>` : '';
+                        let suffix = (idx < entries.length - 1) ? ',' : '';
+                        return `<div class="mb-0.5">${e['Staff Name']} (NP) (${getShiftInfo(e.Shift).label})${suffix}${noteText}</div>`;
+                    }).join('');
+                    finalHtml += `<div class="break-inside-avoid"><span class="font-bold w-32 inline-block align-top">${dayName}:</span> <span class="inline-block w-[calc(100%-8rem)]">${roleStrings}</span></div>`;
+                }
+            });
+            finalHtml += `</div>`;
+
+            finalHtml += `<h3 class="text-xl font-bold mb-4 mt-8 border-b border-slate-300 pb-2">On-Call Coverage</h3><div class="space-y-3">`;
+            let hasOnCall = false;
+            weekDates.forEach(date => {
+                const onCallEntry = (state.onCall || []).find(o => o.Date === date);
+                const dayName = new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' });
+                
+                if (onCallEntry && (onCallEntry.FirstCall || onCallEntry.SecondCall)) {
+                    hasOnCall = true;
+                    let callText = [];
+                    if (onCallEntry.FirstCall) callText.push(`1st Call: <span class="font-medium">${onCallEntry.FirstCall}</span>`);
+                    if (onCallEntry.SecondCall) callText.push(`2nd Call: <span class="font-medium">${onCallEntry.SecondCall}</span>`);
+                    
+                    finalHtml += `<div class="break-inside-avoid"><span class="font-bold w-32 inline-block align-top">${dayName}:</span> <span class="inline-block w-[calc(100%-8rem)]">${callText.join(' / ')}</span></div>`;
+                }
+            });
+            if(!hasOnCall) finalHtml += `<div class="py-2 text-slate-500 italic font-serif">No on-call coverage scheduled for this week.</div>`;
+            finalHtml += `</div>`;
+
+            finalHtml += `<h3 class="text-xl font-bold mb-4 mt-8 border-b border-slate-300 pb-2">Inpatient Call Schedule</h3><div class="space-y-3">`;
+            let hasInpatient = false;
+            weekDates.forEach(date => {
+                const entries = (state.inpatientCalls || []).filter(c => c.Date === date);
+                const dayName = new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' });
+                if (entries.length > 0) {
+                    hasInpatient = true;
+                    let callStrings = entries.map(e => `${e.Name} <span class="text-sm text-slate-500">(${e.Type})</span>`).join(', ');
+                    finalHtml += `<div class="break-inside-avoid"><span class="font-bold w-32 inline-block align-top">${dayName}:</span> <span class="inline-block w-[calc(100%-8rem)]">${callStrings}</span></div>`;
+                }
+            });
+            if(!hasInpatient) finalHtml += `<div class="py-2 text-slate-500 italic font-serif">No inpatient call assignments this week.</div>`;
+            finalHtml += `</div>`;
+
+            const container = document.getElementById('doc-absences-content');
+            if(container) container.innerHTML = finalHtml;
+        }
+
+        function openModal(type, group = 'MD') {
+            state.modalType = type;
+            state.modalGroup = group;
+            state.editingId = null;
+            
+            document.getElementById('modal-staff-wrapper').classList.remove('hidden');
+            document.getElementById('modal-site-wrapper').classList.add('hidden');
+            document.getElementById('modal-clinic-fields').classList.add('hidden');
+            document.getElementById('modal-absence-fields').classList.add('hidden');
+            document.getElementById('modal-absence-type-wrapper').classList.add('hidden');
+            document.getElementById('modal-np-type-wrapper').classList.add('hidden');
+            document.getElementById('modal-np-fields').classList.add('hidden');
+            document.getElementById('modal-inpatient-type-wrapper').classList.add('hidden');
+            document.getElementById('modal-peer-review-fields').classList.add('hidden');
+
+            document.getElementById('modal-staff-name').required = true;
+            document.getElementById('modal-staff-name').value = state.physicians[0]?.name || '';
+            
+            const weekDates = getWeekDates(state.calendarDate);
+            document.getElementById('modal-start-date').value = weekDates[0];
+            document.getElementById('modal-end-date').value = weekDates[0];
+            
+            if (type === 'peer_review') {
+                document.getElementById('modal-title').innerText = "Add Peer Review Assignment";
+                document.getElementById('modal-staff-wrapper').classList.add('hidden');
+                document.getElementById('modal-staff-name').required = false;
+                document.getElementById('modal-site-wrapper').classList.remove('hidden');
+                document.getElementById('modal-peer-review-fields').classList.remove('hidden');
+                document.getElementById('modal-submit-btn').className = "flex-1 px-4 py-2 text-white rounded-lg font-bold transition-colors bg-emerald-600 hover:bg-emerald-700 shadow-sm";
+            } else if (type === 'clinic') {
+                document.getElementById('modal-title').innerText = "Add Clinic Coverage";
+                document.getElementById('modal-clinic-fields').classList.remove('hidden');
+                document.getElementById('modal-clinic-name').value = '';
+                document.getElementById('modal-clinic-notes').value = '';
+                document.getElementById('modal-submit-btn').className = "flex-1 px-4 py-2 text-white rounded-lg font-bold transition-colors bg-purple-600 hover:bg-purple-700 shadow-sm";
+            } else if (type === 'inpatient') {
+                document.getElementById('modal-title').innerText = "Add Inpatient Call";
+                document.getElementById('modal-inpatient-type-wrapper').classList.remove('hidden');
+                document.getElementById('modal-inpatient-shift-type').value = 'AM Coverage';
+                document.getElementById('modal-submit-btn').className = "flex-1 px-4 py-2 text-white rounded-lg font-bold transition-colors bg-teal-600 hover:bg-teal-700 shadow-sm";
+            } else if (group === 'NP') {
+                document.getElementById('modal-title').innerText = "Add NP Assignment";
+                document.getElementById('modal-np-type-wrapper').classList.remove('hidden');
+                document.getElementById('modal-np-fields').classList.remove('hidden');
+                document.getElementById('modal-np-notes').value = '';
+                document.getElementById('modal-np-shift-type').value = 'vacation';
+                document.getElementById('modal-submit-btn').className = "flex-1 px-4 py-2 text-white rounded-lg font-bold transition-colors bg-indigo-600 hover:bg-indigo-700 shadow-sm";
+            } else {
+                document.getElementById('modal-title').innerText = "Add Schedule Entry";
+                document.getElementById('modal-absence-type-wrapper').classList.remove('hidden');
+                document.getElementById('modal-absence-fields').classList.remove('hidden');
+                document.getElementById('modal-shift-type').value = 'vacation';
+                state.modalCoverages = [{ id: Date.now(), site: state.config.sites[0], coveringPhysician: state.physicians[0]?.name, startDate: weekDates[0], endDate: weekDates[0], notes: '' }];
+                renderModalCoverages();
+                document.getElementById('modal-submit-btn').className = "flex-1 px-4 py-2 text-white rounded-lg font-bold transition-colors bg-blue-600 hover:bg-blue-700 shadow-sm";
+            }
+
+            document.getElementById('schedule-modal').classList.remove('hidden');
+            document.getElementById('schedule-modal').classList.add('flex');
+        }
+
+        function closeModal() {
+            document.getElementById('schedule-modal').classList.add('hidden');
+            document.getElementById('schedule-modal').classList.remove('flex');
+        }
+
+        function editSchedule(id) {
+            const assign = state.schedules.find(s => s.ID == id);
+            if(!assign) return;
+
+            state.editingId = id;
+            state.modalGroup = assign.Group || 'MD';
+            
+            document.getElementById('modal-staff-wrapper').classList.remove('hidden');
+            document.getElementById('modal-site-wrapper').classList.add('hidden');
+            document.getElementById('modal-clinic-fields').classList.add('hidden');
+            document.getElementById('modal-absence-fields').classList.add('hidden');
+            document.getElementById('modal-absence-type-wrapper').classList.add('hidden');
+            document.getElementById('modal-np-type-wrapper').classList.add('hidden');
+            document.getElementById('modal-np-fields').classList.add('hidden');
+            document.getElementById('modal-inpatient-type-wrapper').classList.add('hidden');
+            document.getElementById('modal-peer-review-fields').classList.add('hidden');
+            document.getElementById('modal-staff-name').required = true;
+
+            document.getElementById('modal-staff-name').value = assign['Staff Name'];
+            
+            const weekDates = getWeekDates(state.calendarDate);
+            document.getElementById('modal-start-date').value = assign.Date || weekDates[0];
+            document.getElementById('modal-end-date').value = assign.Date || weekDates[0];
+
+            if (assign.Shift === 'clinic') {
+                state.modalType = 'clinic';
+                document.getElementById('modal-title').innerText = "Edit Clinic Coverage";
+                document.getElementById('modal-clinic-fields').classList.remove('hidden');
+                document.getElementById('modal-submit-btn').className = "flex-1 px-4 py-2 text-white rounded-lg font-bold transition-colors bg-purple-600 hover:bg-purple-700 shadow-sm";
+                
+                let parsedClinicName = '';
+                let parsedNotes = '';
+                if (assign.Appointments && assign.Appointments.startsWith('Clinic ->')) {
+                    const parts = assign.Appointments.replace('Clinic -> ', '').split(' | Notes: ');
+                    parsedClinicName = parts[0] ? parts[0].trim() : '';
+                    parsedNotes = parts[1] ? parts[1].trim() : '';
+                }
+                document.getElementById('modal-clinic-name').value = parsedClinicName;
+                document.getElementById('modal-clinic-notes').value = parsedNotes;
+                
+            } else if (state.modalGroup === 'NP') {
+                state.modalType = 'absence';
+                document.getElementById('modal-title').innerText = "Edit NP Assignment";
+                document.getElementById('modal-np-type-wrapper').classList.remove('hidden');
+                document.getElementById('modal-np-fields').classList.remove('hidden');
+                document.getElementById('modal-submit-btn').className = "flex-1 px-4 py-2 text-white rounded-lg font-bold transition-colors bg-indigo-600 hover:bg-indigo-700 shadow-sm";
+                document.getElementById('modal-np-shift-type').value = assign.Shift || 'vacation';
+                document.getElementById('modal-np-notes').value = assign.Appointments === 'Scheduled Off / Absence' || assign.Appointments === 'NP Assignment' ? '' : (assign.Appointments || '');
+                
+            } else {
+                state.modalType = 'absence';
+                document.getElementById('modal-title').innerText = `Edit Schedule Entry`;
+                document.getElementById('modal-absence-type-wrapper').classList.remove('hidden');
+                document.getElementById('modal-absence-fields').classList.remove('hidden');
+                document.getElementById('modal-submit-btn').className = "flex-1 px-4 py-2 text-white rounded-lg font-bold transition-colors bg-blue-600 hover:bg-blue-700 shadow-sm";
+                document.getElementById('modal-shift-type').value = assign.Shift || 'vacation';
+
+                state.modalCoverages = [];
+                if (assign.Appointments && assign.Appointments.includes('Coverage ->')) {
+                    const covString = assign.Appointments.split('Coverage -> ')[1];
+                    const covItems = covString.split(' | ');
+                    covItems.forEach((item, idx) => {
+                        const match = item.match(COVERAGE_REGEX);
+                        if (match) {
+                            state.modalCoverages.push({ 
+                                id: Date.now() + idx, 
+                                site: match[1].trim(), 
+                                coveringPhysician: match[2].trim(),
+                                startDate: match[3].trim(),
+                                endDate: match[3].trim(),
+                                notes: match[4] ? match[4].trim() : ''
+                            });
+                        }
+                    });
+                }
+                renderModalCoverages();
+            }
+
+            document.getElementById('schedule-modal').classList.remove('hidden');
+            document.getElementById('schedule-modal').classList.add('flex');
+        }
+
+        function addModalCoverage() {
+            const startDate = document.getElementById('modal-start-date').value;
+            const endDate = document.getElementById('modal-end-date').value;
+            state.modalCoverages.push({ 
+                id: Date.now(), 
+                site: state.config.sites[0], 
+                coveringPhysician: state.physicians[0]?.name, 
+                startDate: startDate, 
+                endDate: endDate,
+                notes: ''
+            });
+            renderModalCoverages();
+        }
+
+        function updateModalCoverageSite(id, val) { const c = state.modalCoverages.find(x => x.id === id); if(c) c.site = val; }
+        function updateModalCoveragePhys(id, val) { const c = state.modalCoverages.find(x => x.id === id); if(c) c.coveringPhysician = val; }
+        function updateModalCoverageNotes(id, val) { const c = state.modalCoverages.find(x => x.id === id); if(c) c.notes = val; }
+        function removeModalCoverage(id) { state.modalCoverages = state.modalCoverages.filter(c => c.id !== id); renderModalCoverages(); }
+
+        function updateModalCoverageStartDate(id, val) {
+            const c = state.modalCoverages.find(x => x.id === id);
+            if(c) {
+                c.startDate = val;
+                const weekDates = getWeekDates(state.calendarDate);
+                if (weekDates.indexOf(c.startDate) > weekDates.indexOf(c.endDate)) c.endDate = val;
+                renderModalCoverages();
+            }
+        }
+
+        function updateModalCoverageEndDate(id, val) {
+            const c = state.modalCoverages.find(x => x.id === id);
+            if(c) {
+                c.endDate = val;
+                const weekDates = getWeekDates(state.calendarDate);
+                if (weekDates.indexOf(c.endDate) < weekDates.indexOf(c.startDate)) c.startDate = val;
+                renderModalCoverages();
+            }
+        }
+
+        function renderModalCoverages() {
+            const container = document.getElementById('modal-coverages-container');
+            if(!container) return;
+            if (state.modalCoverages.length === 0) {
+                container.innerHTML = `<div class="text-sm text-slate-500 italic py-3 text-center border-2 border-dashed border-slate-200 rounded-lg bg-white">No coverages assigned.</div>`;
+                return;
+            }
+            
+            const siteOptions = state.config.sites.map(s => `<option value="${s}">${s}</option>`).join('');
+            const weekDates = getWeekDates(state.calendarDate);
+            const dateOptions = DAYS.map((d, i) => `<option value="${weekDates[i]}">${d} (${weekDates[i]})</option>`).join('');
+
+            container.innerHTML = state.modalCoverages.map(cov => `
+                <div class="flex gap-2 items-end bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex-wrap xl:flex-nowrap">
+                    <div class="flex-[1] min-w-[90px]">
+                        <label class="block text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-1">Site</label>
+                        <select onchange="updateModalCoverageSite(${cov.id}, this.value)" class="w-full border border-slate-300 rounded-md px-2 py-2 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                            ${siteOptions.replace(`value="${cov.site}"`, `value="${cov.site}" selected`)}
+                        </select>
+                    </div>
+                    <div class="flex-[1.2] min-w-[110px]">
+                        <label class="block text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-1">Coverage By</label>
+                        <select onchange="updateModalCoveragePhys(${cov.id}, this.value)" class="w-full border border-slate-300 rounded-md px-2 py-2 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                            ${getPhysOptionsHtml(cov.coveringPhysician)}
+                        </select>
+                    </div>
+                    <div class="flex-[1.2] min-w-[110px]">
+                        <label class="block text-[10px] uppercase tracking-wider font-bold text-slate-900 mb-1">Start Date</label>
+                        <select onchange="updateModalCoverageStartDate(${cov.id}, this.value)" class="w-full border border-slate-300 rounded-md px-2 py-2 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium text-slate-800">
+                            ${dateOptions.replace(`value="${cov.startDate}"`, `value="${cov.startDate}" selected`)}
+                        </select>
+                    </div>
+                    <div class="flex-[1.2] min-w-[110px]">
+                        <label class="block text-[10px] uppercase tracking-wider font-bold text-slate-900 mb-1">End Date</label>
+                        <select onchange="updateModalCoverageEndDate(${cov.id}, this.value)" class="w-full border border-slate-300 rounded-md px-2 py-2 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium text-slate-800">
+                            ${dateOptions.replace(`value="${cov.endDate}"`, `value="${cov.endDate}" selected`)}
+                        </select>
+                    </div>
+                    <div class="flex-[1.5] min-w-[120px]">
+                        <label class="block text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-1">Notes</label>
+                        <input type="text" onchange="updateModalCoverageNotes(${cov.id}, this.value)" value="${cov.notes || ''}" placeholder="Optional notes..." class="w-full border border-slate-300 rounded-md px-2 py-2 text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-white text-slate-800">
+                    </div>
+                    <div class="pb-[2px]">
+                        <button type="button" onclick="removeModalCoverage(${cov.id})" class="text-slate-400 hover:text-red-500 bg-slate-50 hover:bg-red-50 p-1.5 rounded-md transition-colors border border-slate-200">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        async function handleSaveSchedule(e) {
+            e.preventDefault();
+            
+            const weekDates = getWeekDates(state.calendarDate);
+            const startVal = document.getElementById('modal-start-date').value;
+            const endVal = document.getElementById('modal-end-date').value;
+            const startIdx = weekDates.indexOf(startVal);
+            const endIdx = weekDates.indexOf(endVal);
+
+            if (startIdx > endIdx) {
+                alert("Start Date must be before or equal to the End Date.");
+                return;
+            }
+
+            let backendPromises = [];
+
+            if (state.modalType === 'peer_review') {
+                const site = document.getElementById('modal-pr-site').value;
+                const dr1 = document.getElementById('modal-pr-dr1').value;
+                const dr2 = document.getElementById('modal-pr-dr2').value;
+
+                for (let i = startIdx; i <= endIdx; i++) {
+                    const targetDateStr = weekDates[i];
+                    let entry = state.peerReviews.find(p => p.Date === targetDateStr && p.Site === site);
+                    if (!entry) {
+                        entry = { id: Date.now().toString() + i + Math.floor(Math.random() * 100), Date: targetDateStr, Site: site, Dr1: '', Dr2: '' };
+                        state.peerReviews.push(entry);
+                    } else if (!entry.id) {
+                        entry.id = Date.now().toString() + i + Math.floor(Math.random() * 100);
+                    }
+                    entry.Dr1 = dr1;
+                    entry.Dr2 = dr2;
+
+                    backendPromises.push(sendToSheet({ 
+                        action: "savePeerReview", 
+                        data: { 
+                            id: entry.id, ID: entry.id, 
+                            date: targetDateStr, Date: targetDateStr, 
+                            site: site, Site: site, 
+                            dr1: dr1 || "", Dr1: dr1 || "", 
+                            dr2: dr2 || "", Dr2: dr2 || "" 
+                        } 
+                    }));
+                }
+                
+                closeModal();
+                renderPeerReview();
+                Promise.all(backendPromises).catch(err => console.error("Batch save error:", err));
+                return;
+            }
+
+            const staffName = document.getElementById('modal-staff-name').value;
+
+            if (state.editingId) {
+                if (state.modalType === 'inpatient') {
+                    state.inpatientCalls = state.inpatientCalls.filter(c => (c.id || c.ID) != state.editingId);
+                    await sendToSheet({ action: "deleteInpatientCall", id: state.editingId, ID: state.editingId });
+                } else {
+                    state.schedules = state.schedules.filter(s => s.ID != state.editingId);
+                    await sendToSheet({ action: "deleteSchedule", id: state.editingId });
+                }
+            }
+
+            for (let i = startIdx; i <= endIdx; i++) {
+                const targetDateStr = weekDates[i];
+                const entryId = (state.editingId && startIdx === endIdx) ? 
+                    state.editingId : 
+                    Date.now().toString() + i + Math.floor(Math.random() * 1000);
+
+                if (state.modalType === 'inpatient') {
+                    const typeVal = document.getElementById('modal-inpatient-shift-type').value;
+                    const newCall = { id: entryId, ID: entryId, Date: targetDateStr, Name: staffName, Type: typeVal };
+                    state.inpatientCalls.push(newCall);
+                    
+                    backendPromises.push(sendToSheet({ 
+                        action: "saveInpatientCall", 
+                        data: { 
+                            id: entryId, ID: entryId, 
+                            date: targetDateStr, Date: targetDateStr, 
+                            name: staffName, Name: staffName, 
+                            type: typeVal, Type: typeVal 
+                        }
+                    }));
+                    continue;
+                }
+
+                if (state.modalGroup === 'MD' && state.holidays.some(h => h.Date === targetDateStr)) {
+                    if (startIdx === endIdx) {
+                        alert(`Cannot add MD assignments to ${targetDateStr} as it is marked as a Holiday.`);
+                        return;
+                    }
+                    continue; 
+                }
+
+                let finalAppointments = '';
+                let shiftVal = '';
+
+                let isVacationFlag = "Yes";
+                if (state.modalType === 'clinic') isVacationFlag = "No";
+                
+                if (state.modalType === 'clinic') {
+                    const cName = document.getElementById('modal-clinic-name').value;
+                    const cNotes = document.getElementById('modal-clinic-notes').value;
+                    finalAppointments = `Clinic -> ${cName}${cNotes ? ` | Notes: ${cNotes}` : ''}`;
+                    shiftVal = 'clinic';
+                } else if (state.modalGroup === 'NP') {
+                    shiftVal = document.getElementById('modal-np-shift-type').value;
+                    const npNotes = document.getElementById('modal-np-notes').value;
+                    
+                    const isAbsence = ['early', 'middle', 'late', 'vacation', 'unavailable', 'inpatient'].includes(shiftVal);
+                    finalAppointments = npNotes ? npNotes : (isAbsence ? 'Scheduled Off / Absence' : 'NP Assignment');
+                    
+                    if (['review_am', 'review_pm', 'ccau'].includes(shiftVal)) isVacationFlag = "No";
+                } else {
+                    const dayCoverages = state.modalCoverages.filter(c => {
+                        if(!c.site || !c.coveringPhysician) return false;
+                        const sIdx = weekDates.indexOf(c.startDate);
+                        const eIdx = weekDates.indexOf(c.endDate);
+                        const currentIdx = weekDates.indexOf(targetDateStr);
+                        return currentIdx >= sIdx && currentIdx <= eIdx;
+                    });
+                    
+                    const coverageStrings = dayCoverages.map(c => {
+                        const safeNotes = c.notes ? c.notes.replace(/\|/g, '-') : '';
+                        return `${c.site}: ${c.coveringPhysician} (${targetDateStr})${safeNotes ? ` [Notes: ${safeNotes}]` : ''}`;
+                    });
+                        
+                    finalAppointments = coverageStrings.length > 0 ? `Coverage -> ${coverageStrings.join(' | ')}` : 'Scheduled Off / Absence';
+                    shiftVal = document.getElementById('modal-shift-type').value;
+                }
+
+                const newEntry = {
+                    ID: entryId,
+                    Date: targetDateStr,
+                    'Staff Name': staffName,
+                    Shift: shiftVal,
+                    Group: state.modalGroup, 
+                    Vacations: isVacationFlag,
+                    Appointments: finalAppointments
+                };
+
+                state.schedules.push(newEntry);
+                
+                backendPromises.push(sendToSheet({
+                    action: "addSchedule",
+                    data: {
+                        id: entryId, ID: entryId,
+                        date: targetDateStr,
+                        name: staffName,
+                        shift: shiftVal,
+                        vacations: isVacationFlag || "No",
+                        appointments: finalAppointments || "None",
+                        group: state.modalGroup
+                    }
+                }));
+            }
+            
+            closeModal();
+            
+            if (state.modalType === 'inpatient') {
+                renderCallTab();
+            } else {
+                renderDayView();
+                renderCalendarView();
+            }
+            renderCoverageDoc();
+
+            Promise.all(backendPromises).catch(err => console.error("Batch save error:", err));
+        }
+
+        async function addPhysician(e) {
+            e.preventDefault();
+            const name = document.getElementById('new-physician-name').value;
+            const pager = document.getElementById('new-physician-pager').value;
+            const email = document.getElementById('new-physician-email').value;
+            if (name && !state.physicians.find(p => p.name === name)) {
+                state.physicians.push({ name, email, pager });
+                document.getElementById('new-physician-name').value = '';
+                document.getElementById('new-physician-pager').value = '';
+                document.getElementById('new-physician-email').value = '';
+                populateDropdowns(); renderSettings();
+                await sendToSheet({ action: "addPhysician", data: { name, email, pager } });
+            }
+        }
+        async function removePhysician(name) { state.physicians = state.physicians.filter(p => p.name !== name); populateDropdowns(); renderSettings(); await sendToSheet({ action: "deletePhysician", name }); }
+        
+        async function addEmailList(e) {
+            e.preventDefault();
+            const name = document.getElementById('new-email-name').value;
+            const address = document.getElementById('new-email-address').value;
+            if (name && address && !state.emails.find(em => em.address === address)) {
+                state.emails.push({ name, address });
+                document.getElementById('new-email-name').value = '';
+                document.getElementById('new-email-address').value = '';
+                populateDropdowns(); renderSettings();
+                await sendToSheet({ action: "addEmail", data: { name, address } });
+            }
+        }
+        async function removeEmailList(address) { state.emails = state.emails.filter(e => e.address !== address); populateDropdowns(); renderSettings(); await sendToSheet({ action: "deleteEmail", address }); }
+
+        function renderSettings() {
+            const physList = document.getElementById('physicians-list');
+            physList.innerHTML = state.physicians.length === 0 ? `<p class="text-sm text-slate-500 text-center py-4">No staff added.</p>` : state.physicians.map(p => `
+                <div class="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50">
+                    <div>
+                        <div class="font-medium text-slate-700">${p.name}</div>
+                        <div class="text-xs text-slate-500">${p.email || 'No email associated'}</div>
+                        ${p.pager ? `<div class="text-[10px] uppercase font-bold text-slate-400 mt-1"><i data-lucide="pager" class="w-3 h-3 inline mr-0.5"></i> ${p.pager}</div>` : ''}
+                    </div>
+                    <button onclick="removePhysician('${p.name}')" class="text-slate-400 hover:text-red-500 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>`).join('');
+
+            const emailsList = document.getElementById('emails-list');
+            emailsList.innerHTML = state.emails.length === 0 ? `<p class="text-sm text-slate-500 text-center py-4">No emails added.</p>` : state.emails.map(e => `
+                <div class="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50">
+                    <div><div class="font-medium text-slate-700">${e.name}</div><div class="text-xs text-slate-500">${e.address}</div></div>
+                    <button onclick="removeEmailList('${e.address}')" class="text-slate-400 hover:text-red-500 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>`).join('');
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
