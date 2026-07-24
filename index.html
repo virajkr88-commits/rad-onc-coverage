@@ -48,9 +48,6 @@
                         <button onclick="switchTab('oncall')" id="nav-oncall" class="nav-btn whitespace-nowrap flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-200">
                             <i data-lucide="phone-call" class="w-4 h-4"></i> <span class="hidden sm:inline">Call</span>
                         </button>
-                        <button onclick="switchTab('coverage')" id="nav-coverage" class="nav-btn whitespace-nowrap flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-200">
-                            <i data-lucide="clipboard-list" class="w-4 h-4"></i> <span class="hidden sm:inline">Absences</span>
-                        </button>
                         <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn whitespace-nowrap flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-200">
                             <i data-lucide="settings" class="w-4 h-4"></i> <span class="hidden sm:inline">Settings</span>
                         </button>
@@ -65,9 +62,6 @@
                         </button>
                         <button onclick="generateDailySummaryEmail()" class="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-indigo-50 border border-indigo-200 text-indigo-700 px-4 py-2 rounded-lg font-medium text-sm hover:bg-indigo-100 transition-colors shadow-sm">
                             <i data-lucide="mail" class="w-4 h-4"></i> <span class="hidden sm:inline">Email Reminder</span>
-                        </button>
-                        <button id="auth-btn" onclick="toggleAuth()" class="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-slate-900 transition-colors shadow-sm">
-                            <i data-lucide="log-in" class="w-4 h-4"></i> Sign In
                         </button>
                     </div>
                 </div>
@@ -1811,15 +1805,23 @@
                 const entry = (state.onCall || []).find(o => o.Date === dateStr) || {};
                 const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
                 
+                const firstCallCell = state.isAuthenticated ?
+                    `<select onchange="updateOnCall('${dateStr}', 'FirstCall', this.value)" class="w-full border border-slate-300 rounded-md px-3 py-1.5 text-sm outline-none bg-white">${getPhysOptionsHtml(entry.FirstCall)}</select>` :
+                    `<div class="text-sm font-medium text-slate-800 px-3 py-1.5 border border-transparent">${entry.FirstCall || '<span class="text-slate-400 italic font-normal">Unassigned</span>'}</div>`;
+                const secondCallCell = state.isAuthenticated ?
+                    `<select onchange="updateOnCall('${dateStr}', 'SecondCall', this.value)" class="w-full border border-slate-300 rounded-md px-3 py-1.5 text-sm outline-none bg-white">${getPhysOptionsHtml(entry.SecondCall)}</select>` :
+                    `<div class="text-sm font-medium text-slate-800 px-3 py-1.5 border border-transparent">${entry.SecondCall || '<span class="text-slate-400 italic font-normal">Unassigned</span>'}</div>`;
+
                 html += `<tr class="${isWeekend ? 'bg-slate-50' : 'bg-white'} hover:bg-slate-100 transition-colors">
                     <td class="py-2 px-4 whitespace-nowrap"><div class="flex items-center gap-2"><span class="font-medium text-slate-900 w-6 text-right">${d}</span><span class="text-xs font-bold text-slate-500 uppercase">${dayName}</span></div></td>
-                    <td class="py-2 px-4"><select onchange="updateOnCall('${dateStr}', 'FirstCall', this.value)" class="w-full border border-slate-300 rounded-md px-3 py-1.5 text-sm outline-none bg-white">${getPhysOptionsHtml(entry.FirstCall)}</select></td>
-                    <td class="py-2 px-4"><select onchange="updateOnCall('${dateStr}', 'SecondCall', this.value)" class="w-full border border-slate-300 rounded-md px-3 py-1.5 text-sm outline-none bg-white">${getPhysOptionsHtml(entry.SecondCall)}</select></td></tr>`;
+                    <td class="py-2 px-4">${firstCallCell}</td>
+                    <td class="py-2 px-4">${secondCallCell}</td></tr>`;
             }
             document.getElementById('oncall-tbody').innerHTML = html;
         }
 
         async function updateOnCall(date, field, value) {
+            if (!state.isAuthenticated) { renderOnCall(); return; }
             let entry = state.onCall.find(o => o.Date === date);
             if(!entry) { entry = { Date: date, FirstCall: '', SecondCall: '' }; state.onCall.push(entry); }
             entry[field] = value;
