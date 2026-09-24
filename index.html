@@ -141,6 +141,14 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Resident Coverage summary -->
+                        <div class="mt-4 bg-slate-50 border border-slate-200 rounded-xl p-4">
+                            <div class="text-[10px] font-bold text-violet-600 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                <i data-lucide="graduation-cap" class="w-3.5 h-3.5"></i> RESIDENT COVERAGE
+                            </div>
+                            <div id="dayview-resident-content" class="space-y-2"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -312,6 +320,20 @@
                 <div id="inpatient-call-grid" class="grid grid-cols-1 lg:grid-cols-7 gap-4"></div>
             </div>
 
+            <!-- Resident Coverage Schedule -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                    <h2 class="text-xl font-semibold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="graduation-cap" class="w-5 h-5 text-violet-600"></i> Resident Coverage
+                    </h2>
+                    <button onclick="openModal('resident', 'Call')" class="auth-required hidden bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2 text-sm">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Assignment +
+                    </button>
+                </div>
+                <div id="resident-coverage-grid" class="grid grid-cols-1 lg:grid-cols-7 gap-4"></div>
+            </div>
+
+
             <!-- Monthly On-Call -->
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
@@ -442,6 +464,11 @@
                                 <option value="PM Coverage">PM Coverage</option>
                                 <option value="Coverage 0830-1630">Coverage 0830-1630</option>
                             </select>
+                        </div>
+
+                        <div id="modal-resident-wrapper" class="hidden">
+                            <label class="block text-sm font-bold text-slate-700 mb-1">Covering Resident</label>
+                            <select id="modal-resident-name" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-violet-500 outline-none bg-white shadow-sm"></select>
                         </div>
                     </div>
 
@@ -614,6 +641,7 @@
             onCall: [],
             peerReviews: [], 
             inpatientCalls: [],
+            residentCoverage: [],
             calendarDate: new Date().toISOString().split('T')[0],
             isSyncing: false,
             isAuthenticated: false,
@@ -668,7 +696,8 @@
                     holidays: state.holidays,
                     onCall: state.onCall,
                     peerReviews: state.peerReviews,
-                    inpatientCalls: state.inpatientCalls
+                    inpatientCalls: state.inpatientCalls,
+                    residentCoverage: state.residentCoverage
                 }
             };
         }
@@ -733,6 +762,7 @@
             state.onCall = Array.isArray(d.onCall) ? d.onCall : [];
             state.peerReviews = Array.isArray(d.peerReviews) ? d.peerReviews : [];
             state.inpatientCalls = Array.isArray(d.inpatientCalls) ? d.inpatientCalls : [];
+            state.residentCoverage = Array.isArray(d.residentCoverage) ? d.residentCoverage : [];
 
             state.cacheSavedAt = cached.savedAt;
             state.hydratedFromCache = true;
@@ -962,6 +992,7 @@
 
         function populateDropdowns() {
             if(document.getElementById('modal-staff-name')) document.getElementById('modal-staff-name').innerHTML = getPhysOptionsHtml();
+            if(document.getElementById('modal-resident-name')) document.getElementById('modal-resident-name').innerHTML = getPhysOptionsHtml();
 
             if(document.getElementById('modal-shift-type')) document.getElementById('modal-shift-type').innerHTML = state.config.absenceTypes.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
             if(document.getElementById('modal-np-shift-type')) document.getElementById('modal-np-shift-type').innerHTML = state.config.npTypes.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
@@ -1074,11 +1105,16 @@
                     };
                 });
                 
-                state.inpatientCalls = (data.inpatientCalls || []).map(c => ({ 
-                    id: c.id || c.ID, 
-                    Date: String(c.Date || c.date || '').split('T')[0].trim(), 
-                    Name: String(c.Name || c.name || c['Staff Name'] || '').trim(), 
-                    Type: c.Type || c.type || '' 
+                const allCallRows = (data.inpatientCalls || []).map(c => ({
+                    id: c.id || c.ID,
+                    Date: String(c.Date || c.date || '').split('T')[0].trim(),
+                    Name: String(c.Name || c.name || c['Staff Name'] || '').trim(),
+                    Type: String(c.Type || c.type || '')
+                }));
+                // Resident Coverage rows share the Inpatient Call sheet; they are tagged by their Type value
+                state.inpatientCalls = allCallRows.filter(c => !isResidentCoverageType(c.Type));
+                state.residentCoverage = allCallRows.filter(c => isResidentCoverageType(c.Type)).map(c => ({
+                    id: c.id, ID: c.id, Date: c.Date, Name: c.Name, Resident: parseResidentFromType(c.Type), Type: c.Type
                 }));
                 
                 state.peerReviews = (data.peerReviews || []).map(p => ({ 
@@ -1575,6 +1611,19 @@
             document.getElementById('dayview-oncall-1').innerHTML = formatCall(onCallEntry.FirstCall);
             document.getElementById('dayview-oncall-2').innerHTML = formatCall(onCallEntry.SecondCall);
 
+            // Resident Coverage summary
+            const resEntries = (state.residentCoverage || []).filter(r => r.Date === targetDate);
+            const resEl = document.getElementById('dayview-resident-content');
+            if (resEl) {
+                resEl.innerHTML = resEntries.length === 0
+                    ? '<span class="text-slate-400 italic text-sm font-medium">None</span>'
+                    : resEntries.map((r, i) => `
+                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 text-sm ${i > 0 ? 'pt-2 border-t border-slate-200' : ''}">
+                            <div><span class="text-xs text-[#829ab1] uppercase font-bold tracking-wider">Staff:</span> <span class="font-bold text-[#0c315c]">${r.Name}</span>${getPagerDisplay(r.Name)}</div>
+                            <div class="sm:text-right"><span class="text-xs text-[#829ab1] uppercase font-bold tracking-wider">Covering Resident:</span> <span class="font-bold text-violet-800">${r.Resident || '—'}</span>${getPagerDisplay(r.Resident)}</div>
+                        </div>`).join('');
+            }
+
             const prHtml = state.config.peerReviewSites.map(site => {
                 const entry = state.peerReviews.find(p => p.Date === targetDate && p.Site === site) || {};
                 const dr1 = entry.Dr1 || '<span class="text-slate-400 italic font-normal">Unassigned</span>';
@@ -1914,6 +1963,81 @@
         function renderCallTab() {
             renderOnCall();
             renderInpatientCall();
+            renderResidentCoverage();
+        }
+
+        // ---------- Resident Coverage ----------
+        // Stored in the same Google Sheet / Apps Script as Inpatient Call rows (saveInpatientCall / deleteInpatientCall).
+        // Rows are identified by a Type value of "Resident Coverage | Covering Resident: <name>".
+        const RESIDENT_TYPE_PREFIX = 'Resident Coverage';
+        function isResidentCoverageType(type) {
+            return String(type || '').trim().toLowerCase().startsWith(RESIDENT_TYPE_PREFIX.toLowerCase());
+        }
+        function buildResidentType(resident) {
+            return `${RESIDENT_TYPE_PREFIX} | Covering Resident: ${resident}`;
+        }
+        function parseResidentFromType(type) {
+            const m = String(type || '').match(/Covering Resident:\s*(.*)$/i);
+            return m ? m[1].trim() : '';
+        }
+
+        function renderResidentCoverage() {
+            const weekDates = getWeekDates(state.calendarDate);
+            const container = document.getElementById('resident-coverage-grid');
+            if(!container) return;
+
+            container.innerHTML = DAYS.map((dayName, index) => {
+                const targetDate = weekDates[index];
+                const displayDateObj = new Date(targetDate + 'T12:00:00');
+                const formattedDate = displayDateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                const isWeekend = index > 4;
+
+                const entries = (state.residentCoverage || []).filter(c => c.Date === targetDate);
+
+                let entriesHTML = entries.map(rc => `
+                    <div class="p-3 rounded-lg bg-violet-50 border-l-4 border-violet-500 shadow-sm relative group mb-2">
+                        <div class="flex justify-between items-start">
+                            <div class="w-full">
+                                <div class="text-[10px] font-bold uppercase text-violet-800 mb-0.5">Staff Member</div>
+                                <div class="font-bold text-sm text-slate-900">${rc.Name}</div>
+                                ${getPagerDisplay(rc.Name)}
+                                <div class="text-[10px] font-bold uppercase text-violet-800 mt-2 mb-0.5">Covering Resident</div>
+                                <div class="font-bold text-sm text-slate-900">${rc.Resident || '<span class="text-slate-400 italic font-normal">None</span>'}</div>
+                                ${getPagerDisplay(rc.Resident)}
+                            </div>
+                            ${state.isAuthenticated ? `
+                            <button onclick="deleteResidentCoverage('${rc.id || rc.ID}', event)" class="text-slate-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity bg-white/50 hover:bg-white rounded p-1 flex items-center justify-center -mr-1 -mt-1">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+
+                if (entries.length === 0) {
+                    entriesHTML = `<div class="text-slate-400 text-xs italic text-center py-4">No assignments</div>`;
+                }
+
+                return `
+                    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col transition-all duration-300 ${isWeekend ? 'bg-slate-50 opacity-90' : ''}">
+                        <div class="${isWeekend ? 'bg-slate-100' : 'bg-slate-50'} border-b border-slate-200 p-3 flex flex-col">
+                            <span class="font-bold text-slate-700">${dayName}</span>
+                            <span class="text-xs font-medium text-slate-500">${formattedDate}</span>
+                        </div>
+                        <div class="p-3 flex-grow relative min-h-[120px]">
+                            ${entriesHTML}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        async function deleteResidentCoverage(id, event) {
+            if(event) event.stopPropagation();
+            state.residentCoverage = state.residentCoverage.filter(c => (c.id || c.ID) != id);
+            renderCallTab();
+            if (state.activeTab === 'dayview') renderDayView();
+            await sendToSheet({ action: "deleteInpatientCall", id: id, ID: id });
         }
 
         function renderInpatientCall() {
@@ -2162,6 +2286,7 @@
             document.getElementById('modal-np-type-wrapper').classList.add('hidden');
             document.getElementById('modal-np-fields').classList.add('hidden');
             document.getElementById('modal-inpatient-type-wrapper').classList.add('hidden');
+            document.getElementById('modal-resident-wrapper').classList.add('hidden');
             document.getElementById('modal-peer-review-fields').classList.add('hidden');
 
             document.getElementById('modal-staff-name').required = true;
@@ -2189,6 +2314,11 @@
                 document.getElementById('modal-inpatient-type-wrapper').classList.remove('hidden');
                 document.getElementById('modal-inpatient-shift-type').value = 'AM Coverage';
                 document.getElementById('modal-submit-btn').className = "flex-1 px-4 py-2 text-white rounded-lg font-bold transition-colors bg-teal-600 hover:bg-teal-700 shadow-sm";
+            } else if (type === 'resident') {
+                document.getElementById('modal-title').innerText = "Add Resident Coverage";
+                document.getElementById('modal-resident-wrapper').classList.remove('hidden');
+                document.getElementById('modal-resident-name').value = state.physicians[0]?.name || '';
+                document.getElementById('modal-submit-btn').className = "flex-1 px-4 py-2 text-white rounded-lg font-bold transition-colors bg-violet-600 hover:bg-violet-700 shadow-sm";
             } else if (group === 'NP') {
                 document.getElementById('modal-title').innerText = "Add NP Assignment";
                 document.getElementById('modal-np-type-wrapper').classList.remove('hidden');
@@ -2230,6 +2360,7 @@
             document.getElementById('modal-np-type-wrapper').classList.add('hidden');
             document.getElementById('modal-np-fields').classList.add('hidden');
             document.getElementById('modal-inpatient-type-wrapper').classList.add('hidden');
+            document.getElementById('modal-resident-wrapper').classList.add('hidden');
             document.getElementById('modal-peer-review-fields').classList.add('hidden');
             document.getElementById('modal-staff-name').required = true;
 
@@ -2445,6 +2576,9 @@
                 if (state.modalType === 'inpatient') {
                     state.inpatientCalls = state.inpatientCalls.filter(c => (c.id || c.ID) != state.editingId);
                     await sendToSheet({ action: "deleteInpatientCall", id: state.editingId, ID: state.editingId });
+                } else if (state.modalType === 'resident') {
+                    state.residentCoverage = state.residentCoverage.filter(c => (c.id || c.ID) != state.editingId);
+                    await sendToSheet({ action: "deleteInpatientCall", id: state.editingId, ID: state.editingId });
                 } else {
                     state.schedules = state.schedules.filter(s => s.ID != state.editingId);
                     await sendToSheet({ action: "deleteSchedule", id: state.editingId });
@@ -2462,6 +2596,24 @@
                     const newCall = { id: entryId, ID: entryId, Date: targetDateStr, Name: staffName, Type: typeVal };
                     state.inpatientCalls.push(newCall);
                     
+                    backendPromises.push(sendToSheet({ 
+                        action: "saveInpatientCall", 
+                        data: { 
+                            id: entryId, ID: entryId, 
+                            date: targetDateStr, Date: targetDateStr, 
+                            name: staffName, Name: staffName, 
+                            type: typeVal, Type: typeVal 
+                        }
+                    }));
+                    continue;
+                }
+
+                if (state.modalType === 'resident') {
+                    const residentName = document.getElementById('modal-resident-name').value;
+                    const typeVal = buildResidentType(residentName);
+                    state.residentCoverage.push({ id: entryId, ID: entryId, Date: targetDateStr, Name: staffName, Resident: residentName, Type: typeVal });
+
+                    // Same Google Sheet + Apps Script action as the Inpatient Call Schedule
                     backendPromises.push(sendToSheet({ 
                         action: "saveInpatientCall", 
                         data: { 
@@ -2549,6 +2701,9 @@
             
             if (state.modalType === 'inpatient') {
                 renderCallTab();
+            } else if (state.modalType === 'resident') {
+                renderCallTab();
+                renderDayView();
             } else {
                 renderDayView();
                 renderCalendarView();
